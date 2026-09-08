@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GOLO-MAS | Mayorista y Minorista</title>
+<meta name="description" content="GOLO-MAS - Venta mayorista y minorista de artículos de almacén" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root{
+    --black:#111008;
+    --red:#C6272B;
+    --red-dark:#8f1c1f;
+    --amber:#F2A11A;
+    --amber-light:#FFD166;
+    --cream:#FBF6EC;
+    --line:#e7ddc9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--black);
+    font-family:'Barlow',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Archivo Black',sans-serif;letter-spacing:-0.5px;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  ::selection{background:var(--amber);color:var(--black);}
+
+  /* HEADER */
+  .topbar{
+    background:var(--black);
+    color:var(--cream);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;
+    position:sticky;top:0;z-index:50;
+    border-bottom:3px solid var(--red);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:40px;height:40px;border-radius:50%;
+    border:2.5px solid var(--red);
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 35% 30%, #1c1a12, #000);
+  }
+  .brand-mark span{color:var(--amber);font-family:'Archivo Black';font-size:18px;}
+  .brand-name{font-family:'Archivo Black';font-size:20px;line-height:1;}
+  .brand-name small{display:block;font-family:'Barlow';font-weight:500;font-size:10px;color:var(--amber-light);letter-spacing:.5px;margin-top:2px;}
+  .topbar-actions{display:flex;align-items:center;gap:10px;}
+  .icon-btn{
+    width:38px;height:38px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:#221f14;color:var(--cream);
+    font-size:16px;transition:transform .15s ease, background .15s ease;
+  }
+  .icon-btn:hover{background:var(--red);transform:translateY(-2px);}
+  .cart-btn{
+    background:var(--red);color:var(--cream);
+    display:flex;align-items:center;gap:8px;
+    padding:9px 16px;border-radius:30px;font-weight:700;
+  }
+  .cart-count{
+    background:var(--amber);color:var(--black);
+    min-width:20px;height:20px;border-radius:50%;
+    font-size:11px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;
+  }
+
+  /* HERO */
+  .hero{
+    padding:38px 22px 26px;
+    background:linear-gradient(180deg, #1a1810 0%, var(--black) 100%);
+    color:var(--cream);
+  }
+  .hero h1{font-size:clamp(28px,6vw,44px);margin:0 0 8px;color:var(--cream);}
+  .hero h1 em{font-style:normal;color:var(--amber);}
+  .hero p{max-width:520px;color:#d8cfb8;font-size:15px;margin:0 0 18px;}
+  .hero-tags{display:flex;gap:10px;flex-wrap:wrap;}
+  .tag{
+    border:1px solid var(--red);color:var(--amber-light);
+    padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;
+  }
+
+  /* SEARCH / CATEGORIES */
+  .filters{
+    position:sticky;top:69px;z-index:40;
+    background:var(--cream);
+    padding:14px 22px;border-bottom:1px solid var(--line);
+  }
+  .search-row{display:flex;gap:10px;max-width:900px;margin:0 auto 10px;}
+  .search-row input{
+    flex:1;padding:11px 14px;border-radius:10px;border:2px solid var(--line);
+    font-size:14px;background:#fff;
+  }
+  .search-row input:focus{outline:none;border-color:var(--red);}
+  .price-mode{
+    display:flex;background:#fff;border:2px solid var(--line);border-radius:10px;overflow:hidden;
+  }
+  .price-mode button{padding:0 14px;font-size:13px;font-weight:700;background:#fff;color:#8a8060;}
+  .price-mode button.active{background:var(--red);color:#fff;}
+  .cats{display:flex;gap:8px;flex-wrap:wrap;max-width:900px;margin:0 auto;}
+  .cat-chip{
+    padding:6px 14px;border-radius:20px;background:#fff;border:1px solid var(--line);
+    font-size:13px;font-weight:600;color:#5c543c;
+  }
+  .cat-chip.active{background:var(--black);color:var(--amber-light);border-color:var(--black);}
+
+  /* GRID */
+  .grid-wrap{padding:24px 22px 60px;max-width:1100px;margin:0 auto;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    display:flex;flex-direction:column;position:relative;
+  }
+  .card.selected{outline:3px solid var(--amber);}
+  .card-img{
+    width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1ead8;
+    display:block;
+  }
+  .no-img{width:100%;aspect-ratio:1/1;background:#f1ead8;display:flex;align-items:center;justify-content:center;color:#c9bf9e;font-size:12px;}
+  .card-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1;}
+  .card-cat{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#a89a6c;font-weight:700;}
+  .card-name{font-size:15px;font-weight:700;line-height:1.15;min-height:34px;}
+  .price-row{margin-top:auto;}
+  .price-main{font-size:19px;font-weight:800;color:var(--red-dark);}
+  .price-alt{font-size:11.5px;color:#7c7458;margin-top:1px;}
+  .stock-off{position:absolute;inset:0;background:rgba(255,255,255,.82);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--red-dark);font-size:13px;text-transform:uppercase;}
+  .card-actions{display:flex;gap:6px;margin-top:6px;}
+  .qty-box{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;}
+  .qty-box button{width:28px;height:32px;background:#f6f1e4;font-weight:800;color:var(--black);}
+  .qty-box input{width:34px;border:none;text-align:center;font-weight:700;font-size:13px;}
+  .add-btn{
+    flex:1;background:var(--black);color:var(--amber-light);border-radius:8px;
+    font-weight:700;font-size:13px;padding:0 8px;
+  }
+  .add-btn:hover{background:var(--red);color:#fff;}
+  .select-chk{position:absolute;top:8px;left:8px;width:20px;height:20px;z-index:2;accent-color:var(--red);}
+
+  /* FLOATING BARS */
+  .bulk-bar{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+    background:var(--black);color:#fff;padding:10px 16px;border-radius:14px;
+    display:flex;align-items:center;gap:10px;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.3);
+    font-size:13px;
+  }
+  .bulk-bar input{width:70px;padding:6px;border-radius:6px;border:none;text-align:center;}
+  .bulk-bar button{background:var(--red);color:#fff;padding:7px 12px;border-radius:8px;font-weight:700;}
+  .bulk-bar .cancel{background:transparent;color:#ccc;text-decoration:underline;padding:0;}
+
+  /* SOCIAL FLOAT */
+  .float-col{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:10px;z-index:70;}
+  .float-btn{
+    width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:22px;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.25);
+  }
+  .float-btn.wa{background:#25D366;}
+  .float-btn.ig{background:linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7);}
+  .float-btn.chat{background:var(--red);}
+
+  /* CART DRAWER */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:80;}
+  .drawer{
+    position:fixed;top:0;right:0;height:100%;width:min(400px,92vw);
+    background:var(--cream);z-index:90;display:flex;flex-direction:column;
+    box-shadow:-10px 0 30px rgba(0,0,0,.2);
+  }
+  .drawer-head{background:var(--black);color:#fff;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;}
+  .drawer-body{flex:1;overflow-y:auto;padding:14px 18px;}
+  .drawer-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center;}
+  .drawer-item img{width:52px;height:52px;border-radius:8px;object-fit:cover;background:#eee;}
+  .drawer-item .name{font-weight:700;font-size:13.5px;}
+  .drawer-item .sub{font-size:11.5px;color:#7c7458;}
+  .drawer-item .del{color:var(--red);font-size:12px;font-weight:700;margin-left:auto;}
+  .drawer-foot{padding:16px 18px;border-top:2px solid var(--line);background:#fff;}
+  .total-row{display:flex;justify-content:space-between;font-weight:800;font-size:17px;margin-bottom:12px;}
+  .btn-primary{width:100%;background:var(--red);color:#fff;padding:13px;border-radius:10px;font-weight:800;font-size:15px;}
+  .btn-secondary{width:100%;background:var(--black);color:var(--amber-light);padding:13px;border-radius:10px;font-weight:800;font-size:15px;margin-top:8px;}
+  .disclaimer{font-size:10.5px;color:#9b937a;margin-top:10px;line-height:1.4;}
+
+  /* MODAL generic */
+  .modal-card{
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:#fff;border-radius:16px;padding:22px;z-index:100;
+    width:min(420px,92vw);max-height:86vh;overflow-y:auto;
+  }
+  .modal-card h3{margin-top:0;}
+  .field{margin-bottom:10px;}
+  .field label{display:block;font-size:12px;font-weight:700;margin-bottom:4px;color:#5c543c;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--line);font-size:13.5px;font-family:inherit;
+  }
+  .modal-close{position:absolute;top:14px;right:16px;font-size:20px;color:#999;}
+
+  /* CHAT WIDGET */
+  .chat-window{
+    position:fixed;bottom:82px;right:16px;width:300px;max-height:420px;
+    background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);
+    z-index:75;display:flex;flex-direction:column;overflow:hidden;
+  }
+  .chat-head{background:var(--black);color:#fff;padding:12px 14px;font-weight:800;display:flex;justify-content:space-between;}
+  .chat-body{padding:12px 14px;overflow-y:auto;flex:1;font-size:13.5px;}
+  .chat-bubble{background:#f4efe2;padding:9px 11px;border-radius:10px;margin-bottom:8px;line-height:1.4;}
+  .chat-opt{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);padding:8px 10px;border-radius:8px;margin-bottom:6px;font-size:13px;font-weight:600;}
+  .chat-opt:hover{border-color:var(--red);}
+
+  /* MAPS + FOOTER */
+  .maps-sec{padding:30px 22px;background:#fff;border-top:1px solid var(--line);}
+  .maps-sec iframe{width:100%;height:260px;border:0;border-radius:12px;}
+  footer{background:var(--black);color:#a89a6c;text-align:center;padding:20px;font-size:12px;}
+
+  /* ADMIN */
+  .admin-fab{position:fixed;left:16px;bottom:16px;z-index:70;background:#333;color:#fff;width:40px;height:40px;border-radius:50%;font-size:14px;opacity:.55;}
+  .admin-bar{background:var(--amber);color:var(--black);padding:8px 22px;font-weight:800;font-size:13px;display:flex;justify-content:space-between;align-items:center;}
+  .admin-bar button{background:var(--black);color:var(--amber-light);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;}
+  .admin-panel{padding:18px 22px;max-width:1000px;margin:0 auto;}
+  .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:480px){.admin-grid{grid-template-columns:1fr;}}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  table th,table td{padding:8px;border-bottom:1px solid var(--line);text-align:left;}
+  .small-btn{padding:5px 9px;border-radius:6px;font-size:11.5px;font-weight:700;}
+  .edit-btn{background:#e9e2cd;color:var(--black);}
+  .del-btn2{background:var(--red);color:#fff;}
+
+  /* SCANNER */
+  #reader{width:100%;border-radius:12px;overflow:hidden;}
+  .scan-result{background:#f6f1e4;border-radius:12px;padding:14px;margin-top:12px;}
+  .stock-adjust{display:flex;align-items:center;gap:10px;margin-top:10px;}
+  .stock-adjust button{width:40px;height:40px;border-radius:10px;background:var(--black);color:var(--amber-light);font-size:18px;font-weight:800;}
+  .stock-adjust input{width:70px;text-align:center;padding:8px;border-radius:8px;border:1.5px solid var(--line);font-weight:800;font-size:16px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const {useState,useEffect,useMemo,useRef} = React;
+
+/* =========================================================
+   CONFIGURACIÓN FIREBASE
+   Reemplazá estos valores por los de TU proyecto de Firebase
+   (Firebase console > Configuración del proyecto > Tus apps > SDK config)
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAw4ez6jh174Nd1eA7_GrO-DYqjRvKoxJ4",
+  authDomain: "fir-7ff56.firebaseapp.com",
+  databaseURL: "https://fir-7ff56-default-rtdb.firebaseio.com",
+  projectId: "fir-7ff56",
+  storageBucket: "fir-7ff56.firebasestorage.app",
+  messagingSenderId: "1019507147265",
+  appId: "1:1019507147265:web:abd3731ec9397adc8fb600"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* Clave simple de administración (fase 1 - se reemplaza por login real de clientes/roles en fase 2) */
+const ADMIN_PASS = "golomas2026";
+
+const WHATSAPP_NUM = "5491100000000"; // reemplazar por el número real
+const INSTAGRAM_USER = "golomas"; // reemplazar por el usuario real
+const MAPS_QUERY = "GOLO-MAS almacén mayorista"; // reemplazar por dirección real
+
+const fmt = (n) => "$" + Number(n||0).toLocaleString("es-AR");
+
+function App(){
+  const [productos,setProductos] = useState([]);
+  const [categorias,setCategorias] = useState(["General"]);
+  const [catActiva,setCatActiva] = useState("Todas");
+  const [busqueda,setBusqueda] = useState("");
+  const [modoPrecio,setModoPrecio] = useState("minorista"); // minorista | mayorista
+  const [carrito,setCarrito] = useState([]);
+  const [drawerOpen,setDrawerOpen] = useState(false);
+  const [chatOpen,setChatOpen] = useState(false);
+  const [presupuestoOpen,setPresupuestoOpen] = useState(false);
+  const [datosCliente,setDatosCliente] = useState({nombre:"",telefono:""});
+
+  // Cliente logueado
+  const [clientes,setClientes] = useState([]);
+  const [pedidos,setPedidos] = useState([]);
+  const [clienteActual,setClienteActual] = useState(null);
+  const [loginOpen,setLoginOpen] = useState(false);
+  const [loginNumero,setLoginNumero] = useState("");
+  const [loginPass,setLoginPass] = useState("");
+  const [loginError,setLoginError] = useState("");
+  const [historialOpen,setHistorialOpen] = useState(false);
+
+  // Admin
+  const [adminOpen,setAdminOpen] = useState(false);
+  const [adminLogged,setAdminLogged] = useState(false);
+  const [passInput,setPassInput] = useState("");
+  const [editando,setEditando] = useState(null); // producto en edición o "nuevo"
+  const [seleccionados,setSeleccionados] = useState([]);
+  const [pctAumento,setPctAumento] = useState("");
+  const [adminTab,setAdminTab] = useState("productos"); // productos | clientes | pedidos | stock
+  const [editandoCliente,setEditandoCliente] = useState(null); // cliente en edición o "nuevo"
+  const [escanerAbierto,setEscanerAbierto] = useState(false);
+  const [productoEscaneado,setProductoEscaneado] = useState(null); // producto encontrado o {codigoBarras} nuevo
+  const [manualBarcode,setManualBarcode] = useState("");
+
+  useEffect(()=>{
+    const ref = db.ref("productos");
+    ref.on("value", snap=>{
+      const val = snap.val() || {};
+      const list = Object.entries(val).map(([id,p])=>({id,...p}));
+      setProductos(list);
+      const cats = Array.from(new Set(list.map(p=>p.categoria||"General")));
+      setCategorias(cats);
+    });
+    return ()=>ref.off();
+  },[]);
+
+  useEffect(()=>{
+    const refC = db.ref("clientes");
+    refC.on("value", snap=>{
+      const val = snap.val() || {};
+      setClientes(Object.entries(val).map(([id,c])=>({id,...c})));
+    });
+    const refP = db.ref("pedidos");
+    refP.on("value", snap=>{
+      const val = snap.val() || {};
+      setPedidos(Object.entries(val).map(([id,p])=>({id,...p})));
+    });
+    return ()=>{refC.off();refP.off();};
+  },[]);
+
+  const hacerLogin = () => {
+    setLoginError("");
+    const c = clientes.find(x=> String(x.numero)===String(loginNumero).trim() && String(x.password)===String(loginPass));
+    if(!c){ setLoginError("Número de cliente o contraseña incorrectos."); return; }
+    setClienteActual(c);
+    setLoginOpen(false);
+    setLoginNumero(""); setLoginPass("");
+  };
+
+  const productosFiltrados = useMemo(()=>{
+    return productos.filter(p=>{
+      const okCat = catActiva==="Todas" || (p.categoria||"General")===catActiva;
+      const okBusq = !busqueda || (p.nombre||"").toLowerCase().includes(busqueda.toLowerCase());
+      return okCat && okBusq;
+    });
+  },[productos,catActiva,busqueda]);
+
+  const precioProducto = (p, cantidad, modo) => {
+    // Si hay cantidad mínima mayorista y la cantidad la alcanza (o el modo global es mayorista), usa precio mayorista
+    const usarMayorista = modo==="mayorista" || (p.cantMinMayorista && cantidad >= Number(p.cantMinMayorista));
+    let base = (usarMayorista && p.precioMayorista) ? Number(p.precioMayorista) : Number(p.precioMinorista||0);
+    if(clienteActual && Number(clienteActual.descuento)>0){
+      base = Math.round(base * (1 - Number(clienteActual.descuento)/100));
+    }
+    return base;
+  };
+
+  const agregarAlCarrito = (p, cantidad) => {
+    if(cantidad<=0) return;
+    setCarrito(prev=>{
+      const existe = prev.find(i=>i.id===p.id);
+      if(existe){
+        return prev.map(i=>i.id===p.id?{...i,cantidad:i.cantidad+cantidad}:i);
+      }
+      return [...prev,{id:p.id,nombre:p.nombre,imagen:p.imagen,categoria:p.categoria,cantidad}];
+    });
+  };
+
+  const quitarDelCarrito = (id) => setCarrito(prev=>prev.filter(i=>i.id!==id));
+
+  const carritoConPrecios = useMemo(()=>{
+    return carrito.map(item=>{
+      const p = productos.find(x=>x.id===item.id) || {};
+      const precioUnit = precioProducto(p,item.cantidad,modoPrecio);
+      return {...item, precioUnit, subtotal: precioUnit*item.cantidad};
+    });
+  },[carrito,productos,modoPrecio]);
+
+  const totalCarrito = carritoConPrecios.reduce((s,i)=>s+i.subtotal,0);
+
+  const generarPDF = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(18);
+    doc.text("GOLO-MAS", 14, 18);
+    doc.setFontSize(11);
+    doc.setFont("helvetica","normal");
+    doc.text("Presupuesto - " + new Date().toLocaleDateString("es-AR"), 14, 26);
+    if(datosCliente.nombre) doc.text("Cliente: " + datosCliente.nombre, 14, 33);
+    if(datosCliente.telefono) doc.text("Teléfono: " + datosCliente.telefono, 14, 39);
+    let y = 50;
+    doc.setFont("helvetica","bold");
+    doc.text("Producto",14,y); doc.text("Cant.",120,y); doc.text("P. unit.",145,y); doc.text("Subtotal",175,y);
+    doc.setFont("helvetica","normal");
+    y+=6;
+    carritoConPrecios.forEach(i=>{
+      doc.text(String(i.nombre).slice(0,40),14,y);
+      doc.text(String(i.cantidad),120,y);
+      doc.text(fmt(i.precioUnit),145,y);
+      doc.text(fmt(i.subtotal),175,y);
+      y+=7;
+      if(y>270){doc.addPage();y=20;}
+    });
+    y+=4;
+    doc.setFont("helvetica","bold");
+    doc.text("TOTAL: " + fmt(totalCarrito), 14, y);
+    y+=10;
+    doc.setFontSize(9);
+    doc.setFont("helvetica","italic");
+    doc.text("No incluye costo de envío. Precios sujetos a variación sin previo aviso.",14,y);
+    doc.save("presupuesto-golo-mas.pdf");
+  };
+
+  const confirmarPedido = () => {
+    if(!clienteActual || carrito.length===0) return;
+    const ref = db.ref("pedidos").push();
+    db.ref("pedidos/"+ref.key).set({
+      id: ref.key,
+      clienteId: clienteActual.id,
+      clienteNombre: clienteActual.nombre || clienteActual.numero,
+      items: carritoConPrecios.map(i=>({nombre:i.nombre,cantidad:i.cantidad,precioUnit:i.precioUnit,subtotal:i.subtotal})),
+      total: totalCarrito,
+      estado: "recibido",
+      fecha: new Date().toISOString()
+    });
+    setCarrito([]);
+    alert("¡Pedido enviado! Podés ver su estado en 'Mis pedidos'.");
+  };
+
+  // ---- ADMIN: guardar producto ----
+  const guardarProducto = (data) => {
+    if(data.id){
+      db.ref("productos/"+data.id).update(data);
+    } else {
+      const newRef = db.ref("productos").push();
+      db.ref("productos/"+newRef.key).set({...data, id:newRef.key});
+    }
+    setEditando(null);
+  };
+  const borrarProducto = (id) => {
+    if(confirm("¿Borrar este producto?")) db.ref("productos/"+id).remove();
+  };
+  const toggleSeleccion = (id) => {
+    setSeleccionados(prev=> prev.includes(id) ? prev.filter(x=>x!==id) : [...prev,id]);
+  };
+  const guardarCliente = (data) => {
+    if(data.id){
+      db.ref("clientes/"+data.id).update(data);
+    } else {
+      const newRef = db.ref("clientes").push();
+      db.ref("clientes/"+newRef.key).set({...data, id:newRef.key});
+    }
+    setEditandoCliente(null);
+  };
+  const borrarCliente = (id) => {
+    if(confirm("¿Borrar este cliente?")) db.ref("clientes/"+id).remove();
+  };
+  const onCodigoEscaneado = (codigo) => {
+    setEscanerAbierto(false);
+    const prod = productos.find(p=>String(p.codigoBarras)===String(codigo));
+    if(prod){
+      setProductoEscaneado(prod);
+    } else {
+      setProductoEscaneado({codigoBarras:codigo, nuevo:true});
+    }
+  };
+  const ajustarStock = (id, delta) => {
+    const prod = productos.find(p=>p.id===id);
+    if(!prod) return;
+    const actual = Number(prod.stock)||0;
+    db.ref("productos/"+id).update({stock: Math.max(0, actual+delta)});
+  };
+
+  const cambiarEstadoPedido = (id, estado) => {
+    db.ref("pedidos/"+id).update({estado});
+    if(estado==="entregado"){
+      const pedido = pedidos.find(p=>p.id===id);
+      if(pedido && pedido.estado!=="entregado" && pedido.items){
+        pedido.items.forEach(it=>{
+          const prod = productos.find(x=>x.nombre===it.nombre);
+          if(prod && prod.stock!==undefined && prod.stock!==""){
+            const nuevoStock = Math.max(0, Number(prod.stock) - Number(it.cantidad));
+            db.ref("productos/"+prod.id).update({stock:nuevoStock});
+          }
+        });
+      }
+    }
+  };
+
+  const aplicarAumento = () => {
+    const pct = Number(pctAumento);
+    if(!pct) return;
+    seleccionados.forEach(id=>{
+      const p = productos.find(x=>x.id===id);
+      if(!p) return;
+      const nuevoMin = Math.round(Number(p.precioMinorista||0)*(1+pct/100));
+      const nuevoMay = p.precioMayorista ? Math.round(Number(p.precioMayorista)*(1+pct/100)) : p.precioMayorista;
+      db.ref("productos/"+id).update({precioMinorista:nuevoMin, precioMayorista:nuevoMay});
+    });
+    setSeleccionados([]);
+    setPctAumento("");
+  };
+
+  return (
+    <div>
+      <div className="topbar">
+        <div className="brand">
+          <div className="brand-mark"><span>G</span></div>
+          <div className="brand-name">GOLO-MAS<small>MAYORISTA Y MINORISTA</small></div>
+        </div>
+        <div className="topbar-actions">
+          {clienteActual ? (
+            <button className="icon-btn" style={{width:"auto",borderRadius:20,padding:"0 12px",fontSize:12,fontWeight:700}}
+              onClick={()=>setHistorialOpen(true)} title="Mis pedidos">
+              👤 {clienteActual.nombre || clienteActual.numero}
+            </button>
+          ) : (
+            <button className="icon-btn" onClick={()=>setLoginOpen(true)} title="Ingresar como cliente">👤</button>
+          )}
+          <button className="cart-btn" onClick={()=>setDrawerOpen(true)}>
+            🛒 <span className="cart-count">{carrito.reduce((s,i)=>s+i.cantidad,0)}</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="hero">
+        <h1>Todo para tu <em>almacén</em>,<br/>al mejor precio</h1>
+        <p>Comprá por mayor o por menor. Armá tu pedido y pedí tu presupuesto en un toque.</p>
+        <div className="hero-tags">
+          <span className="tag">Precio mayorista y minorista</span>
+          <span className="tag">Presupuesto al instante</span>
+          <span className="tag">Envíos a comercios</span>
+        </div>
+      </div>
+
+      <div className="filters">
+        <div className="search-row">
+          <input placeholder="Buscar producto..." value={busqueda} onChange={e=>setBusqueda(e.target.value)} />
+          <div className="price-mode">
+            <button className={modoPrecio==="minorista"?"active":""} onClick={()=>setModoPrecio("minorista")}>Por menor</button>
+            <button className={modoPrecio==="mayorista"?"active":""} onClick={()=>setModoPrecio("mayorista")}>Por mayor</button>
+          </div>
+        </div>
+        <div className="cats">
+          <span className={"cat-chip "+(catActiva==="Todas"?"active":"")} onClick={()=>setCatActiva("Todas")}>Todas</span>
+          {categorias.map(c=>(
+            <span key={c} className={"cat-chip "+(catActiva===c?"active":"")} onClick={()=>setCatActiva(c)}>{c}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid-wrap">
+        {productosFiltrados.length===0 && <p style={{textAlign:"center",color:"#a89a6c"}}>No hay productos cargados todavía.</p>}
+        <div className="grid">
+          {productosFiltrados.map(p=>(
+            <ProductCard key={p.id} p={p} modoPrecio={modoPrecio}
+              precioProducto={precioProducto} agregarAlCarrito={agregarAlCarrito}
+              adminLogged={adminLogged} seleccionado={seleccionados.includes(p.id)}
+              toggleSeleccion={toggleSeleccion} onEditar={()=>setEditando(p)} onBorrar={()=>borrarProducto(p.id)} />
+          ))}
+        </div>
+      </div>
+
+      {adminLogged && seleccionados.length>0 && (
+        <div className="bulk-bar">
+          <span>{seleccionados.length} seleccionados</span>
+          <input type="number" placeholder="%" value={pctAumento} onChange={e=>setPctAumento(e.target.value)} />
+          <button onClick={aplicarAumento}>Aplicar aumento</button>
+          <button className="cancel" onClick={()=>setSeleccionados([])}>Cancelar</button>
+        </div>
+      )}
+
+      <div className="maps-sec">
+        <h3>Dónde estamos</h3>
+        <iframe src={"https://www.google.com/maps?q="+encodeURIComponent(MAPS_QUERY)+"&output=embed"} loading="lazy"></iframe>
+      </div>
+
+      <footer>© {new Date().getFullYear()} GOLO-MAS — Venta mayorista y minorista de artículos de almacén</footer>
+
+      {/* Botones flotantes */}
+      <div className="float-col">
+        <a className="float-btn wa" href={"https://wa.me/"+WHATSAPP_NUM} target="_blank">💬</a>
+        <a className="float-btn ig" href={"https://instagram.com/"+INSTAGRAM_USER} target="_blank">📷</a>
+        <button className="float-btn chat" onClick={()=>setChatOpen(o=>!o)}>❓</button>
+      </div>
+      {chatOpen && <ChatWidget onClose={()=>setChatOpen(false)} waNum={WHATSAPP_NUM} />}
+
+      {/* Admin fab discreto */}
+      <button className="admin-fab" onClick={()=>setAdminOpen(true)}>⚙</button>
+      {adminOpen && !adminLogged && (
+        <div className="overlay" onClick={()=>setAdminOpen(false)}>
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <span className="modal-close" onClick={()=>setAdminOpen(false)}>×</span>
+            <h3>Acceso administración</h3>
+            <div className="field">
+              <label>Contraseña</label>
+              <input type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} />
+            </div>
+            <button className="btn-primary" onClick={()=>{
+              if(passInput===ADMIN_PASS){ setAdminLogged(true); setPassInput(""); }
+              else alert("Contraseña incorrecta");
+            }}>Ingresar</button>
+          </div>
+        </div>
+      )}
+
+      {adminLogged && (
+        <>
+          <div className="admin-bar">
+            <div style={{display:"flex",gap:14}}>
+              <span style={{cursor:"pointer",textDecoration:adminTab==="productos"?"underline":"none"}} onClick={()=>setAdminTab("productos")}>Productos</span>
+              <span style={{cursor:"pointer",textDecoration:adminTab==="clientes"?"underline":"none"}} onClick={()=>setAdminTab("clientes")}>Clientes</span>
+              <span style={{cursor:"pointer",textDecoration:adminTab==="pedidos"?"underline":"none"}} onClick={()=>setAdminTab("pedidos")}>Pedidos {pedidos.filter(p=>p.estado==="recibido").length>0 && `(${pedidos.filter(p=>p.estado==="recibido").length} nuevos)`}</span>
+              <span style={{cursor:"pointer",textDecoration:adminTab==="stock"?"underline":"none"}} onClick={()=>setAdminTab("stock")}>Stock</span>
+            </div>
+            <div>
+              {adminTab==="productos" && <button onClick={()=>setEditando("nuevo")}>+ Nuevo producto</button>}
+              {adminTab==="clientes" && <button onClick={()=>setEditandoCliente("nuevo")}>+ Nuevo cliente</button>}
+              {adminTab==="stock" && <button onClick={()=>setEscanerAbierto(true)}>📷 Escanear código</button>}
+              {" "}
+              <button onClick={()=>{setAdminLogged(false);setAdminOpen(false);}}>Salir</button>
+            </div>
+          </div>
+
+          {adminTab==="clientes" && (
+            <div className="admin-panel">
+              <table>
+                <thead><tr><th>Nº</th><th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>CUIL</th><th>Desc. %</th><th></th></tr></thead>
+                <tbody>
+                  {clientes.map(c=>(
+                    <tr key={c.id}>
+                      <td>{c.numero}</td><td>{c.nombre}</td><td>{c.telefono}</td><td>{c.direccion}</td><td>{c.cuil}</td><td>{c.descuento||0}%</td>
+                      <td>
+                        <button className="small-btn edit-btn" onClick={()=>setEditandoCliente(c)}>Editar</button>{" "}
+                        <button className="small-btn del-btn2" onClick={()=>borrarCliente(c.id)}>Borrar</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {clientes.length===0 && <tr><td colSpan="7" style={{color:"#999"}}>No hay clientes cargados.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {adminTab==="pedidos" && (
+            <div className="admin-panel">
+              <table>
+                <thead><tr><th>Fecha</th><th>Cliente</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                  {pedidos.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(p=>(
+                    <tr key={p.id}>
+                      <td>{new Date(p.fecha).toLocaleDateString("es-AR")}</td>
+                      <td>{p.clienteNombre}</td>
+                      <td>{fmt(p.total)}</td>
+                      <td>{p.estado}</td>
+                      <td>
+                        <select value={p.estado} onChange={e=>cambiarEstadoPedido(p.id,e.target.value)}>
+                          <option value="recibido">Recibido</option>
+                          <option value="en camino">En camino</option>
+                          <option value="entregado">Entregado</option>
+                          <option value="rechazado">Rechazado</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                  {pedidos.length===0 && <tr><td colSpan="5" style={{color:"#999"}}>No hay pedidos todavía.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {adminTab==="stock" && (
+            <div className="admin-panel">
+              <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+                <input placeholder="Buscar/ingresar código manualmente..." value={manualBarcode}
+                  onChange={e=>setManualBarcode(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter" && manualBarcode.trim()){onCodigoEscaneado(manualBarcode.trim());setManualBarcode("");}}}
+                  style={{flex:1,minWidth:200,padding:"9px 12px",borderRadius:8,border:"1.5px solid var(--line)"}} />
+                <button className="small-btn edit-btn" onClick={()=>{if(manualBarcode.trim()){onCodigoEscaneado(manualBarcode.trim());setManualBarcode("");}}}>Buscar</button>
+              </div>
+              <table>
+                <thead><tr><th>Producto</th><th>Código de barras</th><th>Stock</th><th></th></tr></thead>
+                <tbody>
+                  {productos.map(p=>(
+                    <tr key={p.id}>
+                      <td>{p.nombre}</td>
+                      <td>{p.codigoBarras || <span style={{color:"#bbb"}}>sin código</span>}</td>
+                      <td style={{fontWeight:800}}>{p.stock!==undefined && p.stock!=="" ? p.stock : "—"}</td>
+                      <td>
+                        <button className="small-btn edit-btn" onClick={()=>ajustarStock(p.id,-1)}>-1</button>{" "}
+                        <button className="small-btn edit-btn" onClick={()=>ajustarStock(p.id,1)}>+1</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {productos.length===0 && <tr><td colSpan="4" style={{color:"#999"}}>No hay productos cargados.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {escanerAbierto && (
+        <div className="overlay" onClick={()=>setEscanerAbierto(false)}>
+          <ScannerModal onScan={onCodigoEscaneado} onClose={()=>setEscanerAbierto(false)} />
+        </div>
+      )}
+
+      {productoEscaneado && (
+        <div className="overlay" onClick={()=>setProductoEscaneado(null)}>
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <span className="modal-close" onClick={()=>setProductoEscaneado(null)}>×</span>
+            {productoEscaneado.nuevo ? (
+              <>
+                <h3>Código no encontrado</h3>
+                <p style={{fontSize:13.5}}>El código <b>{productoEscaneado.codigoBarras}</b> no corresponde a ningún producto cargado.</p>
+                <button className="btn-primary" onClick={()=>{
+                  setEditando({codigoBarras:productoEscaneado.codigoBarras, nombre:"", categoria:"General", imagen:"", precioMinorista:"", precioMayorista:"", cantMinMayorista:"", agotado:false, stock:""});
+                  setProductoEscaneado(null);
+                }}>Cargar como producto nuevo</button>
+              </>
+            ) : (
+              <>
+                <h3>{productoEscaneado.nombre}</h3>
+                <p style={{fontSize:12.5,color:"#7c7458"}}>Código: {productoEscaneado.codigoBarras}</p>
+                <div className="stock-adjust">
+                  <button onClick={()=>ajustarStock(productoEscaneado.id,-1)}>-</button>
+                  <input readOnly value={(productos.find(p=>p.id===productoEscaneado.id)||{}).stock || 0} />
+                  <button onClick={()=>ajustarStock(productoEscaneado.id,1)}>+</button>
+                  <span style={{fontSize:12.5,color:"#7c7458"}}>unidades en stock</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {editandoCliente && (
+        <div className="overlay" onClick={()=>setEditandoCliente(null)}>
+          <ClienteForm cliente={editandoCliente==="nuevo"?null:editandoCliente} onGuardar={guardarCliente} onCerrar={()=>setEditandoCliente(null)} />
+        </div>
+      )}
+
+      {editando && (
+        <div className="overlay" onClick={()=>setEditando(null)}>
+          <ProductForm producto={editando==="nuevo"?null:editando} categorias={categorias}
+            onGuardar={guardarProducto} onCerrar={()=>setEditando(null)} />
+        </div>
+      )}
+
+      {/* Drawer carrito */}
+      {drawerOpen && (
+        <div className="overlay" onClick={()=>setDrawerOpen(false)}>
+          <div className="drawer" onClick={e=>e.stopPropagation()}>
+            <div className="drawer-head">
+              <b>Tu pedido</b>
+              <span onClick={()=>setDrawerOpen(false)} style={{cursor:"pointer"}}>×</span>
+            </div>
+            <div className="drawer-body">
+              {carritoConPrecios.length===0 && <p style={{color:"#999"}}>Todavía no agregaste productos.</p>}
+              {carritoConPrecios.map(i=>(
+                <div className="drawer-item" key={i.id}>
+                  {i.imagen ? <img src={i.imagen}/> : <div className="no-img" style={{width:52,height:52,fontSize:9}}>sin foto</div>}
+                  <div>
+                    <div className="name">{i.nombre}</div>
+                    <div className="sub">{i.cantidad} x {fmt(i.precioUnit)} = {fmt(i.subtotal)}</div>
+                  </div>
+                  <span className="del" onClick={()=>quitarDelCarrito(i.id)}>Quitar</span>
+                </div>
+              ))}
+            </div>
+            <div className="drawer-foot">
+              <div className="total-row"><span>Total</span><span>{fmt(totalCarrito)}</span></div>
+              {clienteActual && (
+                <button className="btn-primary" onClick={confirmarPedido} disabled={carrito.length===0}>Confirmar pedido</button>
+              )}
+              <button className={clienteActual?"btn-secondary":"btn-primary"} onClick={()=>setPresupuestoOpen(true)} disabled={carrito.length===0}>Generar presupuesto</button>
+              <a className="btn-secondary" style={{display:"block",textAlign:"center"}}
+                href={"https://wa.me/"+WHATSAPP_NUM+"?text="+encodeURIComponent(
+                  "Hola! Quiero hacer este pedido:\n"+carritoConPrecios.map(i=>`- ${i.nombre} x${i.cantidad}`).join("\n")+`\nTotal aprox: ${fmt(totalCarrito)}`
+                )} target="_blank">Enviar pedido por WhatsApp</a>
+              <div className="disclaimer">No están incluidos los costos de envío. Los precios pueden no estar actualizados: enviá tu pedido y nos contactamos para confirmarlo.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loginOpen && (
+        <div className="overlay" onClick={()=>setLoginOpen(false)}>
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <span className="modal-close" onClick={()=>setLoginOpen(false)}>×</span>
+            <h3>Ingresar como cliente</h3>
+            <div className="field"><label>Número de cliente</label><input value={loginNumero} onChange={e=>setLoginNumero(e.target.value)} /></div>
+            <div className="field"><label>Contraseña</label><input type="password" value={loginPass} onChange={e=>setLoginPass(e.target.value)} /></div>
+            {loginError && <p style={{color:"var(--red)",fontSize:12.5}}>{loginError}</p>}
+            <button className="btn-primary" onClick={hacerLogin}>Ingresar</button>
+            <p style={{fontSize:11.5,color:"#9b937a",marginTop:8}}>Tu número y contraseña te los da el administrador de GOLO-MAS.</p>
+          </div>
+        </div>
+      )}
+
+      {historialOpen && clienteActual && (
+        <div className="overlay" onClick={()=>setHistorialOpen(false)}>
+          <div className="drawer" onClick={e=>e.stopPropagation()}>
+            <div className="drawer-head">
+              <b>Mis pedidos — {clienteActual.nombre || clienteActual.numero}</b>
+              <span onClick={()=>setHistorialOpen(false)} style={{cursor:"pointer"}}>×</span>
+            </div>
+            <div className="drawer-body">
+              {pedidos.filter(p=>p.clienteId===clienteActual.id).length===0 && <p style={{color:"#999"}}>Todavía no hiciste pedidos.</p>}
+              {pedidos.filter(p=>p.clienteId===clienteActual.id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(p=>(
+                <div key={p.id} style={{borderBottom:"1px solid var(--line)",padding:"10px 0"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontWeight:700,fontSize:13.5}}>
+                    <span>{new Date(p.fecha).toLocaleDateString("es-AR")}</span>
+                    <span style={{textTransform:"uppercase",fontSize:11,color:"var(--red-dark)"}}>{p.estado}</span>
+                  </div>
+                  {(p.items||[]).map((it,i)=>(
+                    <div key={i} style={{fontSize:12,color:"#7c7458"}}>{it.cantidad}x {it.nombre} — {fmt(it.subtotal)}</div>
+                  ))}
+                  <div style={{fontWeight:800,marginTop:4}}>Total: {fmt(p.total)}</div>
+                </div>
+              ))}
+            </div>
+            <div className="drawer-foot">
+              <button className="btn-secondary" onClick={()=>{setClienteActual(null);setHistorialOpen(false);}}>Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {presupuestoOpen && (
+        <div className="overlay" onClick={()=>setPresupuestoOpen(false)}>
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <span className="modal-close" onClick={()=>setPresupuestoOpen(false)}>×</span>
+            <h3>Datos para el presupuesto</h3>
+            <div className="field"><label>Nombre</label><input value={datosCliente.nombre} onChange={e=>setDatosCliente({...datosCliente,nombre:e.target.value})}/></div>
+            <div className="field"><label>Teléfono</label><input value={datosCliente.telefono} onChange={e=>setDatosCliente({...datosCliente,telefono:e.target.value})}/></div>
+            <button className="btn-primary" onClick={()=>{generarPDF();setPresupuestoOpen(false);}}>Descargar PDF</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProductCard({p,modoPrecio,precioProducto,agregarAlCarrito,adminLogged,seleccionado,toggleSeleccion,onEditar,onBorrar}){
+  const [cant,setCant] = useState(1);
+  const agotado = p.agotado || (p.stock!==undefined && p.stock!=="" && Number(p.stock)<=0);
+  const precio = precioProducto(p,cant,modoPrecio);
+  const otroPrecio = modoPrecio==="minorista" ? p.precioMayorista : p.precioMinorista;
+  return (
+    <div className={"card"+(seleccionado?" selected":"")}>
+      {adminLogged && <input type="checkbox" className="select-chk" checked={seleccionado} onChange={()=>toggleSeleccion(p.id)} />}
+      {p.imagen ? <img className="card-img" src={p.imagen}/> : <div className="no-img">Sin foto</div>}
+      {agotado && <div className="stock-off">Sin stock</div>}
+      <div className="card-body">
+        <span className="card-cat">{p.categoria||"General"}</span>
+        <div className="card-name">{p.nombre}</div>
+        <div className="price-row">
+          <div className="price-main">{fmt(precio)}</div>
+          {otroPrecio ? <div className="price-alt">{modoPrecio==="minorista"?"Mayor":"Menor"}: {fmt(otroPrecio)}{p.cantMinMayorista?` desde ${p.cantMinMayorista}u`:""}</div> : null}
+        </div>
+        {!adminLogged ? (
+          <div className="card-actions">
+            <div className="qty-box">
+              <button onClick={()=>setCant(c=>Math.max(1,c-1))}>-</button>
+              <input value={cant} onChange={e=>setCant(Math.max(1,Number(e.target.value)||1))} />
+              <button onClick={()=>setCant(c=>c+1)}>+</button>
+            </div>
+            <button className="add-btn" disabled={agotado} onClick={()=>agregarAlCarrito(p,cant)}>Agregar</button>
+          </div>
+        ) : (
+          <div className="card-actions">
+            <button className="small-btn edit-btn" onClick={onEditar}>Editar</button>
+            <button className="small-btn del-btn2" onClick={onBorrar}>Borrar</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductForm({producto,categorias,onGuardar,onCerrar}){
+  const [form,setForm] = useState(producto || {
+    nombre:"",categoria:"General",imagen:"",precioMinorista:"",precioMayorista:"",cantMinMayorista:"",agotado:false,codigoBarras:"",stock:""
+  });
+  const set = (k,v)=>setForm(f=>({...f,[k]:v}));
+  return (
+    <div className="modal-card" onClick={e=>e.stopPropagation()}>
+      <span className="modal-close" onClick={onCerrar}>×</span>
+      <h3>{producto ? "Editar producto" : "Nuevo producto"}</h3>
+      <div className="field"><label>Código de barras</label><input value={form.codigoBarras} onChange={e=>set("codigoBarras",e.target.value)} placeholder="Escaneá o escribí el código" /></div>
+      <div className="field"><label>Nombre</label><input value={form.nombre} onChange={e=>set("nombre",e.target.value)} /></div>
+      <div className="field"><label>Categoría</label><input list="cats" value={form.categoria} onChange={e=>set("categoria",e.target.value)} />
+        <datalist id="cats">{categorias.map(c=><option key={c} value={c}/>)}</datalist>
+      </div>
+      <div className="field"><label>URL de imagen</label><input value={form.imagen} onChange={e=>set("imagen",e.target.value)} placeholder="https://..." /></div>
+      <div className="field"><label>Precio minorista ($)</label><input type="number" value={form.precioMinorista} onChange={e=>set("precioMinorista",e.target.value)} /></div>
+      <div className="field"><label>Precio mayorista ($)</label><input type="number" value={form.precioMayorista} onChange={e=>set("precioMayorista",e.target.value)} /></div>
+      <div className="field"><label>Cantidad mínima para precio mayorista</label><input type="number" value={form.cantMinMayorista} onChange={e=>set("cantMinMayorista",e.target.value)} placeholder="ej: 6" /></div>
+      <div className="field"><label>Stock actual (unidades)</label><input type="number" value={form.stock} onChange={e=>set("stock",e.target.value)} placeholder="dejalo vacío si no controlás stock de este producto" /></div>
+      <div className="field">
+        <label><input type="checkbox" checked={!!form.agotado} onChange={e=>set("agotado",e.target.checked)} style={{width:"auto",marginRight:6}}/>Marcar como sin stock</label>
+      </div>
+      <button className="btn-primary" onClick={()=>onGuardar(form)}>Guardar</button>
+    </div>
+  );
+}
+
+function ScannerModal({onScan,onClose}){
+  const [error,setError] = useState("");
+  const scannerRef = useRef(null);
+
+  useEffect(()=>{
+    let html5Qr;
+    let activo = true;
+    try{
+      html5Qr = new Html5Qrcode("reader");
+      scannerRef.current = html5Qr;
+      html5Qr.start(
+        {facingMode:"environment"},
+        {fps:10, qrbox:{width:250,height:150}},
+        (decodedText)=>{
+          if(activo){
+            activo = false;
+            html5Qr.stop().catch(()=>{});
+            onScan(decodedText);
+          }
+        },
+        ()=>{} // errores de frame individuales, se ignoran
+      ).catch(err=>setError("No se pudo acceder a la cámara. Probá con la carga manual."));
+    }catch(e){
+      setError("El navegador no permite usar la cámara acá.");
+    }
+    return ()=>{ if(html5Qr){ html5Qr.stop().catch(()=>{}); } };
+  },[]);
+
+  return (
+    <div className="modal-card" onClick={e=>e.stopPropagation()}>
+      <span className="modal-close" onClick={onClose}>×</span>
+      <h3>Escanear código de barras</h3>
+      <div id="reader"></div>
+      {error && <p style={{color:"var(--red)",fontSize:12.5,marginTop:8}}>{error}</p>}
+      <p style={{fontSize:11.5,color:"#9b937a",marginTop:8}}>Apuntá con la cámara al código de barras del producto.</p>
+    </div>
+  );
+}
+
+function ClienteForm({cliente,onGuardar,onCerrar}){
+  const [form,setForm] = useState(cliente || {
+    numero:"",password:"",nombre:"",telefono:"",direccion:"",cuil:"",descuento:""
+  });
+  const set = (k,v)=>setForm(f=>({...f,[k]:v}));
+  return (
+    <div className="modal-card" onClick={e=>e.stopPropagation()}>
+      <span className="modal-close" onClick={onCerrar}>×</span>
+      <h3>{cliente ? "Editar cliente" : "Nuevo cliente"}</h3>
+      <div className="field"><label>Número de cliente</label><input value={form.numero} onChange={e=>set("numero",e.target.value)} /></div>
+      <div className="field"><label>Contraseña</label><input value={form.password} onChange={e=>set("password",e.target.value)} /></div>
+      <div className="field"><label>Nombre</label><input value={form.nombre} onChange={e=>set("nombre",e.target.value)} /></div>
+      <div className="field"><label>Teléfono</label><input value={form.telefono} onChange={e=>set("telefono",e.target.value)} /></div>
+      <div className="field"><label>Dirección</label><input value={form.direccion} onChange={e=>set("direccion",e.target.value)} /></div>
+      <div className="field"><label>CUIL</label><input value={form.cuil} onChange={e=>set("cuil",e.target.value)} /></div>
+      <div className="field"><label>Descuento especial (%)</label><input type="number" value={form.descuento} onChange={e=>set("descuento",e.target.value)} placeholder="0" /></div>
+      <button className="btn-primary" onClick={()=>onGuardar(form)}>Guardar</button>
+    </div>
+  );
+}
+
+const FAQ = [
+  {q:"¿Cómo hago un pedido?", a:"Agregá los productos que quieras al carrito con el botón 'Agregar', después abrí el carrito (ícono arriba a la derecha) y enviá tu pedido por WhatsApp o descargá el presupuesto en PDF."},
+  {q:"¿Hacen envíos?", a:"Sí, hacemos envíos a comercios. Escribinos por WhatsApp con tu dirección para confirmar zona y costo de envío."},
+  {q:"¿Cuál es la diferencia entre precio mayorista y minorista?", a:"El precio mayorista aplica a partir de la cantidad mínima indicada en cada producto, o si activás el modo 'Por mayor' arriba del catálogo."},
+  {q:"¿Cómo pago?", a:"Coordinamos la forma de pago por WhatsApp una vez confirmado el pedido (efectivo, transferencia u otros medios según disponibilidad)."},
+  {q:"Quiero hablar con una persona", a:"__WHATSAPP__"},
+];
+
+function ChatWidget({onClose,waNum}){
+  const [mensajes,setMensajes] = useState([{tipo:"bot",texto:"¡Hola! Soy el asistente de GOLO-MAS 🙂 ¿En qué te puedo ayudar?"}]);
+  const responder = (item) => {
+    setMensajes(m=>[...m,{tipo:"user",texto:item.q}]);
+    setTimeout(()=>{
+      if(item.a==="__WHATSAPP__"){
+        window.open("https://wa.me/"+waNum,"_blank");
+        setMensajes(m=>[...m,{tipo:"bot",texto:"Te abrí WhatsApp para que hables directo con nosotros."}]);
+      } else {
+        setMensajes(m=>[...m,{tipo:"bot",texto:item.a}]);
+      }
+    },300);
+  };
+  return (
+    <div className="chat-window">
+      <div className="chat-head"><span>Asistente GOLO-MAS</span><span style={{cursor:"pointer"}} onClick={onClose}>×</span></div>
+      <div className="chat-body">
+        {mensajes.map((m,i)=>(
+          <div key={i} className="chat-bubble" style={m.tipo==="user"?{background:"#e9e2cd",marginLeft:30}:{}}>{m.texto}</div>
+        ))}
+        <div style={{marginTop:8}}>
+          {FAQ.map((f,i)=><button key={i} className="chat-opt" onClick={()=>responder(f)}>{f.q}</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
