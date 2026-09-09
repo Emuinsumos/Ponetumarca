@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GOLO-MAS | Mayorista y Minorista</title>
+<meta name="description" content="GOLO-MAS - Venta mayorista y minorista de artículos de almacén" />
+<meta name="theme-color" content="#100D08">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E%F0%9F%9B%92%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Barlow','sans-serif'],
+          heading: ['Archivo Black','sans-serif'],
+        },
+        colors: {
+          carbon: { 50:'#F8F6F1',100:'#EFE9D9',200:'#DDD3B4',300:'#B9AB78',400:'#7d7458',500:'#4a4536',600:'#332f24',700:'#241f16',800:'#1a160f',900:'#100D08' },
+          marca:  { 50:'#FDECEC',100:'#FAD3D4',200:'#F3A6A8',300:'#E36366',400:'#D33F42',500:'#C6272B',600:'#A61F23',700:'#8f1c1f',800:'#6b1517' },
+          ambar:  { 100:'#FFF4D9',200:'#FFE9B8',300:'#FFD166',400:'#F2A11A',500:'#D98E12',600:'#B4750D' },
+        },
+        animation: {
+          'fade-in':'fadeIn .4s ease forwards',
+          'slide-up':'slideUp .45s cubic-bezier(.16,1,.3,1) forwards',
+          'pulse-slow':'pulse 3s cubic-bezier(.4,0,.6,1) infinite',
+        },
+        keyframes: {
+          fadeIn:{'0%':{opacity:'0'},'100%':{opacity:'1'}},
+          slideUp:{'0%':{opacity:'0',transform:'translateY(16px)'},'100%':{opacity:'1',transform:'translateY(0)'}},
+        }
+      }
+    }
+  }
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+  body{ font-family:'Barlow',sans-serif; }
+  h1,h2,h3,.font-heading{ font-family:'Archivo Black',sans-serif; letter-spacing:.01em; }
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-track{ background:#F8F6F1; }
+  ::-webkit-scrollbar-thumb{ background:#DDD3B4; border-radius:4px; }
+  .no-scrollbar::-webkit-scrollbar{ display:none; }
+  .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  .bg-mercado{
+    background-color:#F8F6F1;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(242,161,26,.10) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(198,39,43,.07) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+  .tarjeta{
+    border:1px solid rgba(221,211,180,.7);
+    box-shadow:0 8px 18px -8px rgba(16,13,8,.15);
+    transition:all .25s ease;
+  }
+  .tarjeta:hover{ border-color:#F2A11A; box-shadow:0 18px 30px -10px rgba(16,13,8,.22); transform:translateY(-2px); }
+  #reader{ width:100%; border-radius:14px; overflow:hidden; }
+  #reader video{ border-radius:14px; }
+</style>
+</head>
+<body class="bg-mercado min-h-screen text-carbon-900 antialiased selection:bg-ambar-300 selection:text-carbon-900">
+<div id="root"></div>
+
+<script type="text/babel">
+const {useState,useEffect,useMemo,useRef} = React;
+
+/* =========================================================
+   CONFIGURACIÓN FIREBASE (proyecto "ponetumarca", compartido)
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAw4ez6jh174Nd1eA7_GrO-DYqjRvKoxJ4",
+  authDomain: "fir-7ff56.firebaseapp.com",
+  databaseURL: "https://fir-7ff56-default-rtdb.firebaseio.com",
+  projectId: "fir-7ff56",
+  storageBucket: "fir-7ff56.firebasestorage.app",
+  messagingSenderId: "1019507147265",
+  appId: "1:1019507147265:web:abd3731ec9397adc8fb600"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const ADMIN_USER = "golomas";
+const ADMIN_PASS = "1234";
+
+const WHATSAPP_NUM = "5491100000000"; // reemplazar por el número real
+const INSTAGRAM_USER = "golomas"; // reemplazar por el usuario real
+const MAPS_QUERY = "GOLO-MAS almacén mayorista"; // reemplazar por dirección real
+
+const fmt = (n) => "$" + Number(n||0).toLocaleString("es-AR");
+
+const FAQ = [
+  {q:"¿Cómo hago un pedido?", a:"Agregá los productos que quieras al carrito y después abrí el carrito para enviar tu pedido por WhatsApp o descargar el presupuesto en PDF."},
+  {q:"¿Hacen envíos?", a:"Sí, hacemos envíos a comercios. Escribinos por WhatsApp con tu dirección para confirmar zona y costo de envío."},
+  {q:"¿Diferencia entre precio mayorista y minorista?", a:"El precio mayorista aplica desde la cantidad mínima indicada en cada producto, o activando el modo 'Por mayor' arriba del catálogo."},
+  {q:"¿Cómo pago?", a:"Coordinamos la forma de pago por WhatsApp una vez confirmado el pedido."},
+  {q:"Quiero hablar con una persona", a:"__WHATSAPP__"},
+];
+
+function App(){
+  const [productos,setProductos] = useState([]);
+  const [categorias,setCategorias] = useState([]);
+  const [catActiva,setCatActiva] = useState("todas");
+  const [busqueda,setBusqueda] = useState("");
+  const [modoPrecio,setModoPrecio] = useState("minorista");
+  const [carrito,setCarrito] = useState([]);
+  const [drawerOpen,setDrawerOpen] = useState(false);
+  const [chatOpen,setChatOpen] = useState(false);
+  const [preguntaActiva,setPreguntaActiva] = useState(null);
+  const [presupuestoOpen,setPresupuestoOpen] = useState(false);
+  const [datosCliente,setDatosCliente] = useState({nombre:"",telefono:""});
+
+  const [clientes,setClientes] = useState([]);
+  const [pedidos,setPedidos] = useState([]);
+  const [clienteActual,setClienteActual] = useState(null);
+  const [loginOpen,setLoginOpen] = useState(false);
+  const [loginNumero,setLoginNumero] = useState("");
+  const [loginPass,setLoginPass] = useState("");
+  const [loginError,setLoginError] = useState("");
+  const [historialOpen,setHistorialOpen] = useState(false);
+
+  const [adminModalOpen,setAdminModalOpen] = useState(false);
+  const [adminLogged,setAdminLogged] = useState(false);
+  const [userInput,setUserInput] = useState("");
+  const [passInput,setPassInput] = useState("");
+  const [loginAdminError,setLoginAdminError] = useState("");
+  const [adminTab,setAdminTab] = useState("productos");
+  const [editando,setEditando] = useState(null);
+  const [editandoCliente,setEditandoCliente] = useState(null);
+  const [seleccionados,setSeleccionados] = useState([]);
+  const [pctAumento,setPctAumento] = useState("");
+  const [escanerAbierto,setEscanerAbierto] = useState(false);
+  const [productoEscaneado,setProductoEscaneado] = useState(null);
+  const [manualBarcode,setManualBarcode] = useState("");
+  const [adminHistorialCliente,setAdminHistorialCliente] = useState(null);
+
+  useEffect(()=>{
+    const ref = db.ref("productos");
+    ref.on("value", snap=>{
+      const val = snap.val() || {};
+      const list = Object.entries(val).map(([id,p])=>({id,...p}));
+      setProductos(list);
+      setCategorias(Array.from(new Set(list.map(p=>p.categoria||"General"))));
+    });
+    const refC = db.ref("clientes");
+    refC.on("value", snap=>{
+      const val = snap.val() || {};
+      setClientes(Object.entries(val).map(([id,c])=>({id,...c})));
+    });
+    const refP = db.ref("pedidos");
+    refP.on("value", snap=>{
+      const val = snap.val() || {};
+      setPedidos(Object.entries(val).map(([id,p])=>({id,...p})));
+    });
+    return ()=>{ref.off();refC.off();refP.off();};
+  },[]);
+
+  const productosFiltrados = useMemo(()=>{
+    return productos.filter(p=>{
+      const okCat = catActiva==="todas" || (p.categoria||"General")===catActiva;
+      const okBusq = !busqueda || (p.nombre||"").toLowerCase().includes(busqueda.toLowerCase());
+      return okCat && okBusq;
+    });
+  },[productos,catActiva,busqueda]);
+
+  const precioProducto = (p, cantidad, modo) => {
+    const usarMayorista = modo==="mayorista" || (p.cantMinMayorista && cantidad >= Number(p.cantMinMayorista));
+    let base = (usarMayorista && p.precioMayorista) ? Number(p.precioMayorista) : Number(p.precioMinorista||0);
+    if(clienteActual && Number(clienteActual.descuento)>0){
+      base = Math.round(base * (1 - Number(clienteActual.descuento)/100));
+    }
+    return base;
+  };
+
+  const agregarAlCarrito = (p, cantidad) => {
+    if(cantidad<=0) return;
+    setCarrito(prev=>{
+      const existe = prev.find(i=>i.id===p.id);
+      if(existe) return prev.map(i=>i.id===p.id?{...i,cantidad:i.cantidad+cantidad}:i);
+      return [...prev,{id:p.id,nombre:p.nombre,imagen:p.imagen,categoria:p.categoria,cantidad}];
+    });
+    setDrawerOpen(true);
+  };
+  const cambiarCantidadCarrito = (id, delta) => {
+    setCarrito(prev=>prev.map(i=>i.id===id?{...i,cantidad:Math.max(1,i.cantidad+delta)}:i).filter(i=>i.cantidad>0));
+  };
+  const quitarDelCarrito = (id) => setCarrito(prev=>prev.filter(i=>i.id!==id));
+
+  const carritoConPrecios = useMemo(()=>{
+    return carrito.map(item=>{
+      const p = productos.find(x=>x.id===item.id) || {};
+      const precioUnit = precioProducto(p,item.cantidad,modoPrecio);
+      return {...item, precioUnit, subtotal: precioUnit*item.cantidad};
+    });
+  },[carrito,productos,modoPrecio,clienteActual]);
+
+  const totalCarrito = carritoConPrecios.reduce((s,i)=>s+i.subtotal,0);
+  const cantidadCarrito = carrito.reduce((s,i)=>s+i.cantidad,0);
+
+  const hacerLogin = () => {
+    setLoginError("");
+    const c = clientes.find(x=> String(x.numero)===String(loginNumero).trim() && String(x.password)===String(loginPass));
+    if(!c){ setLoginError("Número de cliente o contraseña incorrectos."); return; }
+    setClienteActual(c); setLoginOpen(false); setLoginNumero(""); setLoginPass("");
+  };
+
+  const generarPDF = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont("helvetica","bold"); doc.setFontSize(18);
+    doc.text("GOLO-MAS", 14, 18);
+    doc.setFontSize(11); doc.setFont("helvetica","normal");
+    doc.text("Presupuesto - " + new Date().toLocaleDateString("es-AR"), 14, 26);
+    if(datosCliente.nombre) doc.text("Cliente: " + datosCliente.nombre, 14, 33);
+    if(datosCliente.telefono) doc.text("Teléfono: " + datosCliente.telefono, 14, 39);
+    let y = 50;
+    doc.setFont("helvetica","bold");
+    doc.text("Producto",14,y); doc.text("Cant.",120,y); doc.text("P. unit.",145,y); doc.text("Subtotal",175,y);
+    doc.setFont("helvetica","normal"); y+=6;
+    carritoConPrecios.forEach(i=>{
+      doc.text(String(i.nombre).slice(0,40),14,y);
+      doc.text(String(i.cantidad),120,y);
+      doc.text(fmt(i.precioUnit),145,y);
+      doc.text(fmt(i.subtotal),175,y);
+      y+=7; if(y>270){doc.addPage();y=20;}
+    });
+    y+=4; doc.setFont("helvetica","bold");
+    doc.text("TOTAL: " + fmt(totalCarrito), 14, y); y+=10;
+    doc.setFontSize(9); doc.setFont("helvetica","italic");
+    doc.text("No incluye costo de envío. Precios sujetos a variación sin previo aviso.",14,y);
+    doc.save("presupuesto-golo-mas.pdf");
+  };
+
+  const confirmarPedido = () => {
+    if(!clienteActual || carrito.length===0) return;
+    const ref = db.ref("pedidos").push();
+    db.ref("pedidos/"+ref.key).set({
+      id: ref.key, clienteId: clienteActual.id,
+      clienteNombre: clienteActual.nombre || clienteActual.numero,
+      items: carritoConPrecios.map(i=>({nombre:i.nombre,cantidad:i.cantidad,precioUnit:i.precioUnit,subtotal:i.subtotal})),
+      total: totalCarrito, estado: "recibido", fecha: new Date().toISOString()
+    });
+    setCarrito([]); setDrawerOpen(false);
+    alert("¡Pedido enviado! Podés ver su estado en 'Mis pedidos'.");
+  };
+
+  const guardarProducto = (data) => {
+    if(data.id){ db.ref("productos/"+data.id).update(data); }
+    else{ const newRef = db.ref("productos").push(); db.ref("productos/"+newRef.key).set({...data, id:newRef.key}); }
+    setEditando(null);
+  };
+  const borrarProducto = (id) => { if(confirm("¿Borrar este producto?")) db.ref("productos/"+id).remove(); };
+  const toggleSeleccion = (id) => setSeleccionados(prev=> prev.includes(id) ? prev.filter(x=>x!==id) : [...prev,id]);
+  const aplicarAumento = () => {
+    const pct = Number(pctAumento); if(!pct) return;
+    seleccionados.forEach(id=>{
+      const p = productos.find(x=>x.id===id); if(!p) return;
+      const nuevoMin = Math.round(Number(p.precioMinorista||0)*(1+pct/100));
+      const nuevoMay = p.precioMayorista ? Math.round(Number(p.precioMayorista)*(1+pct/100)) : p.precioMayorista;
+      db.ref("productos/"+id).update({precioMinorista:nuevoMin, precioMayorista:nuevoMay});
+    });
+    setSeleccionados([]); setPctAumento("");
+  };
+
+  const guardarCliente = (data) => {
+    if(data.id){ db.ref("clientes/"+data.id).update(data); }
+    else{ const newRef = db.ref("clientes").push(); db.ref("clientes/"+newRef.key).set({...data, id:newRef.key}); }
+    setEditandoCliente(null);
+  };
+  const borrarCliente = (id) => { if(confirm("¿Borrar este cliente?")) db.ref("clientes/"+id).remove(); };
+  const cambiarEstadoPedido = (id, estado) => {
+    db.ref("pedidos/"+id).update({estado});
+    if(estado==="entregado"){
+      const p = pedidos.find(x=>x.id===id);
+      (p?.items||[]).forEach(it=>{
+        const prod = productos.find(x=>x.nombre===it.nombre);
+        if(prod && prod.stock!==undefined && prod.stock!==""){
+          db.ref("productos/"+prod.id).update({stock: Math.max(0, Number(prod.stock)-Number(it.cantidad))});
+        }
+      });
+    }
+  };
+
+  const ajustarStock = (id, delta) => {
+    const p = productos.find(x=>x.id===id); if(!p) return;
+    const nuevo = Math.max(0, Number(p.stock||0)+delta);
+    db.ref("productos/"+id).update({stock:nuevo});
+  };
+  const onCodigoEscaneado = (codigo) => {
+    setEscanerAbierto(false);
+    const p = productos.find(x=>String(x.codigoBarras||"")===String(codigo));
+    if(p) setProductoEscaneado(p);
+    else setProductoEscaneado({nuevo:true, codigoBarras:codigo});
+  };
+
+  const intentarLoginAdmin = () => {
+    if(userInput===ADMIN_USER && passInput===ADMIN_PASS){
+      setAdminLogged(true); setLoginAdminError(""); setUserInput(""); setPassInput("");
+    } else setLoginAdminError("Usuario o contraseña incorrectos");
+  };
+
+  const categoriasConProductos = categorias.filter(c=>productos.some(p=>(p.categoria||"General")===c));
+
+  return (
+    <div>
+      {/* ===== HEADER ===== */}
+      <header className="sticky top-0 z-40 bg-carbon-900 text-white border-b-4 border-marca-500 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-full border-2 border-marca-500 flex items-center justify-center bg-carbon-800">
+            <span className="font-heading text-ambar-400 text-lg">G</span>
+          </div>
+          <div>
+            <p className="font-heading text-lg leading-none">GOLO-MAS</p>
+            <p className="text-[10px] text-ambar-300 font-semibold tracking-wide mt-0.5">MAYORISTA Y MINORISTA</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {clienteActual ? (
+            <button onClick={()=>setHistorialOpen(true)} className="flex items-center gap-1.5 bg-carbon-800 text-ambar-200 text-xs font-bold px-3 py-2 rounded-full">
+              <i className="fa-solid fa-user"></i>{clienteActual.nombre || clienteActual.numero}
+            </button>
+          ) : (
+            <button onClick={()=>setLoginOpen(true)} className="w-9 h-9 rounded-full bg-carbon-800 flex items-center justify-center hover:bg-marca-600 transition" title="Ingresar como cliente">
+              <i className="fa-solid fa-user"></i>
+            </button>
+          )}
+          <button onClick={()=>setDrawerOpen(true)} className="relative flex items-center gap-2 bg-marca-500 hover:bg-marca-600 transition px-3.5 py-2 rounded-full font-bold text-sm">
+            <i className="fa-solid fa-basket-shopping"></i>
+            <span className="bg-ambar-400 text-carbon-900 w-5 h-5 rounded-full text-[11px] font-extrabold flex items-center justify-center">{cantidadCarrito}</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ===== HERO ===== */}
+      <div className="bg-gradient-to-b from-carbon-900 to-carbon-800 text-white px-5 pt-8 pb-6">
+        <h1 className="font-heading text-3xl sm:text-4xl leading-tight max-w-lg">Todo para tu <span className="text-ambar-400">almacén</span>, al mejor precio</h1>
+        <p className="text-carbon-200 text-sm mt-2 max-w-md">Comprá por mayor o por menor. Armá tu pedido y pedí tu presupuesto en un toque.</p>
+        <div className="flex gap-2 flex-wrap mt-4">
+          {["Precio mayorista y minorista","Presupuesto al instante","Envíos a comercios"].map(t=>(
+            <span key={t} className="border border-marca-500 text-ambar-200 text-[11px] font-bold px-3 py-1 rounded-full">{t}</span>
+          ))}
+        </div>
+      </div>
+
+      <main className="max-w-6xl mx-auto px-4 pt-5">
+        {/* ===== BUSCADOR + MODO PRECIO ===== */}
+        <div className="flex gap-2 mb-4 animate-fade-in">
+          <div className="relative flex-1">
+            <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar producto..."
+              className="w-full bg-white border-2 border-carbon-200 rounded-full py-2.5 pl-10 pr-4 text-sm font-semibold focus:outline-none focus:border-ambar-400 focus:ring-4 focus:ring-ambar-400/20 transition" />
+            <i className="fa-solid fa-magnifying-glass absolute left-4 top-3 text-carbon-400 text-sm"></i>
+          </div>
+          <div className="flex bg-white border-2 border-carbon-200 rounded-full p-1 flex-shrink-0">
+            {[["minorista","Por menor"],["mayorista","Por mayor"]].map(([id,label])=>(
+              <button key={id} onClick={()=>setModoPrecio(id)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition ${modoPrecio===id?'bg-marca-500 text-white':'text-carbon-500'}`}>{label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* ===== CATEGORÍAS ===== */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 mb-3">
+          <button onClick={()=>setCatActiva("todas")}
+            className={`whitespace-nowrap px-5 py-2 rounded-full font-bold text-xs transition shadow-sm ${catActiva==="todas"?'bg-carbon-900 text-ambar-300 scale-105':'bg-white text-carbon-600 border border-carbon-200'}`}>Todas</button>
+          {categoriasConProductos.map(c=>(
+            <button key={c} onClick={()=>setCatActiva(c)}
+              className={`whitespace-nowrap px-5 py-2 rounded-full font-bold text-xs transition shadow-sm ${catActiva===c?'bg-carbon-900 text-ambar-300 scale-105':'bg-white text-carbon-600 border border-carbon-200'}`}>{c}</button>
+          ))}
+        </div>
+
+        {/* ===== GRILLA ===== */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-10">
+          {productosFiltrados.length===0 && (
+            <div className="col-span-full text-center py-16 text-carbon-400">
+              <i className="fa-solid fa-box-open text-4xl mb-3 opacity-50"></i>
+              <p className="font-bold">No hay productos cargados todavía.</p>
+            </div>
+          )}
+          {productosFiltrados.map(p=>(
+            <ProductCard key={p.id} p={p} modoPrecio={modoPrecio} precioProducto={precioProducto} agregarAlCarrito={agregarAlCarrito} />
+          ))}
+        </div>
+
+        {/* ===== MAPS ===== */}
+        <div className="bg-white rounded-2xl tarjeta p-4 mb-8">
+          <h3 className="font-heading text-base mb-3"><i className="fa-solid fa-location-dot text-marca-500 mr-1.5"></i>Dónde estamos</h3>
+          <iframe className="w-full h-56 rounded-xl border-0" loading="lazy" src={"https://www.google.com/maps?q="+encodeURIComponent(MAPS_QUERY)+"&output=embed"}></iframe>
+        </div>
+
+        <footer className="text-center text-xs text-carbon-400 pb-4">
+          <p>© {new Date().getFullYear()} GOLO-MAS — Venta mayorista y minorista de artículos de almacén</p>
+        </footer>
+      </main>
+
+      {/* ===== BOTONES FLOTANTES ===== */}
+      <div className="fixed right-4 bottom-4 z-40 flex flex-col gap-2.5">
+        <a href={"https://wa.me/"+WHATSAPP_NUM} target="_blank" className="w-12 h-12 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-xl hover:scale-105 transition"><i className="fa-brands fa-whatsapp text-xl"></i></a>
+        <a href={"https://instagram.com/"+INSTAGRAM_USER} target="_blank" className="w-12 h-12 rounded-full text-white flex items-center justify-center shadow-xl hover:scale-105 transition" style={{background:"radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)"}}><i className="fa-brands fa-instagram text-xl"></i></a>
+        <button onClick={()=>setChatOpen(true)} className="w-12 h-12 rounded-full bg-marca-500 text-white flex items-center justify-center shadow-xl hover:scale-105 transition animate-pulse-slow"><i className="fa-solid fa-comment-dots text-xl"></i></button>
+      </div>
+      <button onClick={()=>setAdminModalOpen(true)} className="fixed left-4 bottom-4 z-40 w-9 h-9 rounded-full bg-carbon-800/60 text-white flex items-center justify-center text-xs hover:bg-carbon-800 transition" title="Administración"><i className="fa-solid fa-gear"></i></button>
+
+      {/* ===== CHATBOT ===== */}
+      {chatOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+          <div className="bg-carbon-50 w-full sm:max-w-sm sm:rounded-2xl rounded-t-3xl max-h-[80vh] overflow-y-auto animate-slide-up flex flex-col">
+            <div className="sticky top-0 bg-carbon-900 text-ambar-300 px-5 py-3.5 flex justify-between items-center">
+              <h3 className="font-heading text-sm"><i className="fa-solid fa-comment-dots mr-2"></i>Asistente GOLO-MAS</h3>
+              <button onClick={()=>{setChatOpen(false);setPreguntaActiva(null);}}><i className="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div className="p-4 space-y-2.5">
+              {!preguntaActiva ? (
+                <>
+                  <div className="bg-white tarjeta rounded-2xl rounded-tl-sm p-3 text-sm">¡Hola! ¿En qué te puedo ayudar?</div>
+                  {FAQ.map((f,i)=>(
+                    <button key={i} onClick={()=>{
+                      if(f.a==="__WHATSAPP__"){ window.open("https://wa.me/"+WHATSAPP_NUM,"_blank"); }
+                      else setPreguntaActiva(f);
+                    }} className="w-full text-left bg-white border border-carbon-200 hover:border-ambar-400 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition">{f.q}</button>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <div className="bg-carbon-900 text-ambar-200 rounded-2xl rounded-tr-sm p-3 text-sm ml-8">{preguntaActiva.q}</div>
+                  <div className="bg-white tarjeta rounded-2xl rounded-tl-sm p-3 text-sm mr-4">{preguntaActiva.a}</div>
+                  <button onClick={()=>setPreguntaActiva(null)} className="w-full bg-carbon-100 rounded-xl py-2.5 text-sm font-bold"><i className="fa-solid fa-arrow-left mr-1.5"></i>Volver</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== LOGIN CLIENTE ===== */}
+      {loginOpen && (
+        <ModalCentrado onClose={()=>setLoginOpen(false)} titulo="Ingresar como cliente" icono="fa-user">
+          <div className="p-6 space-y-3">
+            <input value={loginNumero} onChange={e=>setLoginNumero(e.target.value)} placeholder="Número de cliente" className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" />
+            <input value={loginPass} onChange={e=>setLoginPass(e.target.value)} type="password" placeholder="Contraseña" onKeyDown={e=>e.key==="Enter"&&hacerLogin()} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" />
+            {loginError && <p className="text-marca-600 text-xs">{loginError}</p>}
+            <button onClick={hacerLogin} className="w-full bg-carbon-900 text-ambar-300 py-2.5 rounded-xl text-sm font-bold">Ingresar</button>
+            <p className="text-[11px] text-carbon-400">Tu número y contraseña te los da el administrador de GOLO-MAS.</p>
+          </div>
+        </ModalCentrado>
+      )}
+
+      {/* ===== HISTORIAL CLIENTE ===== */}
+      {historialOpen && clienteActual && (
+        <DrawerDerecha onClose={()=>setHistorialOpen(false)} titulo={"Mis pedidos"}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {pedidos.filter(p=>p.clienteId===clienteActual.id).length===0 && <p className="text-carbon-400 text-sm text-center py-8">Todavía no hiciste pedidos.</p>}
+            {pedidos.filter(p=>p.clienteId===clienteActual.id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(p=>(
+              <PedidoResumen key={p.id} p={p} />
+            ))}
+          </div>
+          <div className="p-4 border-t border-carbon-100">
+            <button onClick={()=>{setClienteActual(null);setHistorialOpen(false);}} className="w-full bg-carbon-100 text-carbon-700 py-2.5 rounded-xl text-sm font-bold">Cerrar sesión</button>
+          </div>
+        </DrawerDerecha>
+      )}
+
+      {/* ===== CARRITO ===== */}
+      {drawerOpen && (
+        <DrawerDerecha onClose={()=>setDrawerOpen(false)} titulo="Tu pedido" icono="fa-basket-shopping">
+          <div className="flex-1 overflow-y-auto p-4">
+            {carritoConPrecios.length===0 ? (
+              <div className="text-center text-carbon-400 mt-10">
+                <i className="fa-solid fa-bag-shopping text-5xl mb-3 opacity-40"></i>
+                <p className="font-semibold">El carrito está vacío</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {carritoConPrecios.map(i=>(
+                  <div key={i.id} className="flex gap-3 items-center bg-white p-2.5 rounded-xl border border-carbon-100">
+                    {i.imagen ? <img src={i.imagen} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" /> : (
+                      <div className="w-14 h-14 rounded-lg bg-carbon-100 flex items-center justify-center text-carbon-300 flex-shrink-0"><i className="fa-solid fa-box"></i></div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{i.nombre}</p>
+                      <p className="text-[12px] text-carbon-500">{i.cantidad} x {fmt(i.precioUnit)} = <b>{fmt(i.subtotal)}</b></p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button onClick={()=>cambiarCantidadCarrito(i.id,-1)} className="w-6 h-6 rounded-full bg-carbon-100 flex items-center justify-center"><i className="fa-solid fa-minus text-[10px]"></i></button>
+                      <span className="w-4 text-center text-xs font-bold">{i.cantidad}</span>
+                      <button onClick={()=>cambiarCantidadCarrito(i.id,1)} className="w-6 h-6 rounded-full bg-carbon-900 text-ambar-300 flex items-center justify-center"><i className="fa-solid fa-plus text-[10px]"></i></button>
+                    </div>
+                    <button onClick={()=>quitarDelCarrito(i.id)} className="text-marca-500 text-xs ml-1"><i className="fa-solid fa-trash-can"></i></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="p-4 border-t-2 border-carbon-100 bg-white">
+            <div className="flex justify-between items-center font-heading text-lg mb-3"><span>Total</span><span>{fmt(totalCarrito)}</span></div>
+            {clienteActual && (
+              <button onClick={confirmarPedido} disabled={carrito.length===0} className="w-full bg-marca-500 hover:bg-marca-600 disabled:opacity-40 text-white py-3 rounded-xl font-bold text-sm mb-2">Confirmar pedido</button>
+            )}
+            <button onClick={()=>setPresupuestoOpen(true)} disabled={carrito.length===0} className={`w-full py-3 rounded-xl font-bold text-sm mb-2 disabled:opacity-40 ${clienteActual?'bg-carbon-100 text-carbon-700':'bg-marca-500 hover:bg-marca-600 text-white'}`}>Generar presupuesto</button>
+            <a href={"https://wa.me/"+WHATSAPP_NUM+"?text="+encodeURIComponent("Hola! Quiero hacer este pedido:\n"+carritoConPrecios.map(i=>`- ${i.nombre} x${i.cantidad}`).join("\n")+`\nTotal aprox: ${fmt(totalCarrito)}`)}
+              target="_blank" className="w-full flex items-center justify-center gap-2 bg-carbon-900 text-ambar-300 py-3 rounded-xl font-bold text-sm">
+              <i className="fa-brands fa-whatsapp"></i>Enviar pedido por WhatsApp
+            </a>
+            <p className="text-[10.5px] text-carbon-400 mt-2 leading-snug">No están incluidos los costos de envío. Los precios pueden no estar actualizados: enviá tu pedido y nos contactamos para confirmarlo.</p>
+          </div>
+        </DrawerDerecha>
+      )}
+
+      {presupuestoOpen && (
+        <ModalCentrado onClose={()=>setPresupuestoOpen(false)} titulo="Datos para el presupuesto" icono="fa-file-invoice">
+          <div className="p-6 space-y-3">
+            <input value={datosCliente.nombre} onChange={e=>setDatosCliente({...datosCliente,nombre:e.target.value})} placeholder="Nombre" className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" />
+            <input value={datosCliente.telefono} onChange={e=>setDatosCliente({...datosCliente,telefono:e.target.value})} placeholder="Teléfono" className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" />
+            <button onClick={()=>{generarPDF();setPresupuestoOpen(false);}} className="w-full bg-marca-500 hover:bg-marca-600 text-white py-2.5 rounded-xl text-sm font-bold">Descargar PDF</button>
+          </div>
+        </ModalCentrado>
+      )}
+
+      {/* ===== ADMIN ===== */}
+      {adminModalOpen && (
+        <ModalAdmin
+          adminLogged={adminLogged}
+          onClose={()=>{ if(!adminLogged) setAdminModalOpen(false); }}
+          onSalir={()=>{setAdminLogged(false);setAdminModalOpen(false);}}
+          userInput={userInput} setUserInput={setUserInput}
+          passInput={passInput} setPassInput={setPassInput}
+          loginAdminError={loginAdminError}
+          intentarLoginAdmin={intentarLoginAdmin}
+          adminTab={adminTab} setAdminTab={setAdminTab}
+          pedidosNuevos={pedidos.filter(p=>p.estado==="recibido").length}
+        >
+          {adminTab==="productos" && (
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar producto..." className="flex-1 border border-carbon-200 rounded-xl p-2.5 text-sm" />
+                <button onClick={()=>setEditando("nuevo")} className="bg-carbon-900 text-ambar-300 px-4 rounded-xl text-sm font-bold flex-shrink-0"><i className="fa-solid fa-plus mr-1"></i>Nuevo</button>
+              </div>
+              {seleccionados.length>0 && (
+                <div className="flex items-center gap-2 bg-ambar-100 border border-ambar-300 rounded-xl p-2.5">
+                  <span className="text-xs font-bold">{seleccionados.length} seleccionados</span>
+                  <input type="number" value={pctAumento} onChange={e=>setPctAumento(e.target.value)} placeholder="%" className="w-16 p-1.5 rounded-lg border border-carbon-200 text-sm text-center" />
+                  <button onClick={aplicarAumento} className="bg-marca-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Aplicar aumento</button>
+                  <button onClick={()=>setSeleccionados([])} className="text-xs text-carbon-400 underline ml-auto">Cancelar</button>
+                </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {productosFiltrados.map(p=>(
+                  <ProductoAdminCard key={p.id} p={p} seleccionado={seleccionados.includes(p.id)} toggleSeleccion={toggleSeleccion} onEditar={()=>setEditando(p)} onBorrar={()=>borrarProducto(p.id)} />
+                ))}
+                {productosFiltrados.length===0 && <p className="text-carbon-400 text-sm col-span-full text-center py-6">No hay productos cargados.</p>}
+              </div>
+            </div>
+          )}
+
+          {adminTab==="clientes" && (
+            <div className="space-y-3">
+              <button onClick={()=>setEditandoCliente("nuevo")} className="bg-carbon-900 text-ambar-300 px-4 py-2 rounded-xl text-sm font-bold"><i className="fa-solid fa-plus mr-1"></i>Nuevo cliente</button>
+              {clientes.length===0 && <p className="text-carbon-400 text-sm text-center py-6">No hay clientes cargados.</p>}
+              {clientes.map(c=>(
+                <div key={c.id} className="bg-white border border-carbon-100 rounded-xl p-3 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{c.nombre} <span className="text-carbon-400 font-normal">· Nº {c.numero}</span></p>
+                    <p className="text-xs text-carbon-500 truncate">{c.telefono} · {c.direccion}</p>
+                    {Number(c.descuento)>0 && <span className="inline-block mt-1 text-[10px] font-bold bg-ambar-200 text-carbon-800 px-2 py-0.5 rounded-full">{c.descuento}% desc.</span>}
+                  </div>
+                  <button onClick={()=>setAdminHistorialCliente(c)} className="text-carbon-600 text-xs font-bold px-2"><i className="fa-solid fa-clock-rotate-left"></i></button>
+                  <button onClick={()=>setEditandoCliente(c)} className="text-carbon-600 text-xs font-bold px-2"><i className="fa-solid fa-pen"></i></button>
+                  <button onClick={()=>borrarCliente(c.id)} className="text-marca-600 text-xs font-bold px-2"><i className="fa-solid fa-trash-can"></i></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {adminTab==="pedidos" && (
+            <div className="space-y-3">
+              {pedidos.length===0 && <p className="text-carbon-400 text-sm text-center py-6">No hay pedidos todavía.</p>}
+              {pedidos.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(p=>(
+                <div key={p.id} className="bg-white border border-carbon-100 rounded-xl p-3">
+                  <div className="flex justify-between items-start mb-1.5">
+                    <div>
+                      <p className="font-heading text-sm">{p.clienteNombre}</p>
+                      <p className="text-[10px] text-carbon-400">{new Date(p.fecha).toLocaleString("es-AR")}</p>
+                    </div>
+                    <p className="font-heading text-marca-600">{fmt(p.total)}</p>
+                  </div>
+                  <div className="text-xs text-carbon-600 space-y-0.5 mb-2.5">
+                    {(p.items||[]).map((it,i)=><p key={i}>{it.cantidad}x {it.nombre}</p>)}
+                  </div>
+                  <select value={p.estado} onChange={e=>cambiarEstadoPedido(p.id,e.target.value)} className="w-full border border-carbon-200 rounded-lg p-2 text-xs font-bold">
+                    <option value="recibido">Recibido</option>
+                    <option value="en camino">En camino</option>
+                    <option value="entregado">Entregado</option>
+                    <option value="rechazado">Rechazado</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {adminTab==="stock" && (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button onClick={()=>setEscanerAbierto(true)} className="flex-1 flex items-center justify-center gap-2 bg-carbon-900 text-ambar-300 py-2.5 rounded-xl text-sm font-bold"><i className="fa-solid fa-barcode"></i>Escanear código</button>
+              </div>
+              <div className="flex gap-2">
+                <input value={manualBarcode} onChange={e=>setManualBarcode(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Enter" && manualBarcode.trim()){onCodigoEscaneado(manualBarcode.trim());setManualBarcode("");}}}
+                  placeholder="O ingresá el código manualmente..." className="flex-1 border border-carbon-200 rounded-xl p-2.5 text-sm" />
+                <button onClick={()=>{if(manualBarcode.trim()){onCodigoEscaneado(manualBarcode.trim());setManualBarcode("");}}} className="bg-carbon-100 px-4 rounded-xl text-sm font-bold">Buscar</button>
+              </div>
+              <div className="space-y-1.5">
+                {productos.map(p=>(
+                  <div key={p.id} className="flex items-center gap-3 bg-white border border-carbon-100 rounded-xl p-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm truncate">{p.nombre}</p>
+                      <p className="text-[11px] text-carbon-400">{p.codigoBarras || "sin código"}</p>
+                    </div>
+                    <button onClick={()=>ajustarStock(p.id,-1)} className="w-7 h-7 rounded-full bg-carbon-100 text-carbon-700 font-bold">-</button>
+                    <span className="w-8 text-center font-heading text-sm">{p.stock!==undefined && p.stock!=="" ? p.stock : "—"}</span>
+                    <button onClick={()=>ajustarStock(p.id,1)} className="w-7 h-7 rounded-full bg-carbon-900 text-ambar-300 font-bold">+</button>
+                  </div>
+                ))}
+                {productos.length===0 && <p className="text-carbon-400 text-sm text-center py-6">No hay productos cargados.</p>}
+              </div>
+            </div>
+          )}
+
+          {adminTab==="estadisticas" && (()=>{
+            const pedidosValidos = pedidos.filter(p=>p.estado!=="rechazado");
+            const ventasPorProducto = {};
+            pedidosValidos.forEach(p=>(p.items||[]).forEach(it=>{
+              ventasPorProducto[it.nombre] = (ventasPorProducto[it.nombre]||0) + Number(it.cantidad||0);
+            }));
+            const topProductos = Object.entries(ventasPorProducto).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            const maxProd = topProductos.length ? topProductos[0][1] : 1;
+
+            const comprasPorCliente = {};
+            pedidosValidos.forEach(p=>{
+              const key = p.clienteId || p.clienteNombre;
+              if(!comprasPorCliente[key]) comprasPorCliente[key] = {nombre:p.clienteNombre, total:0, pedidos:0};
+              comprasPorCliente[key].total += Number(p.total||0);
+              comprasPorCliente[key].pedidos += 1;
+            });
+            const topClientes = Object.values(comprasPorCliente).sort((a,b)=>b.total-a.total).slice(0,10);
+            const maxCli = topClientes.length ? topClientes[0].total : 1;
+
+            return (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-heading text-sm mb-3"><i className="fa-solid fa-fire text-marca-500 mr-1.5"></i>Productos más vendidos</h3>
+                  {topProductos.length===0 && <p className="text-carbon-400 text-sm">Todavía no hay pedidos confirmados.</p>}
+                  <div className="space-y-2.5">
+                    {topProductos.map(([nombre,cant])=>(
+                      <div key={nombre}>
+                        <div className="flex justify-between text-xs font-semibold mb-1"><span>{nombre}</span><span>{cant} u.</span></div>
+                        <div className="bg-carbon-100 rounded-full h-2"><div className="bg-marca-500 h-2 rounded-full" style={{width:(cant/maxProd*100)+"%"}}></div></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-heading text-sm mb-3"><i className="fa-solid fa-crown text-ambar-500 mr-1.5"></i>Clientes que más compran</h3>
+                  {topClientes.length===0 && <p className="text-carbon-400 text-sm">Todavía no hay pedidos confirmados.</p>}
+                  <div className="space-y-2.5">
+                    {topClientes.map((c,i)=>(
+                      <div key={i}>
+                        <div className="flex justify-between text-xs font-semibold mb-1"><span>{c.nombre} ({c.pedidos} pedidos)</span><span>{fmt(c.total)}</span></div>
+                        <div className="bg-carbon-100 rounded-full h-2"><div className="bg-ambar-400 h-2 rounded-full" style={{width:(c.total/maxCli*100)+"%"}}></div></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </ModalAdmin>
+      )}
+
+      {editando && (
+        <ModalCentrado onClose={()=>setEditando(null)} titulo={editando==="nuevo"||editando.nuevo ? "Nuevo producto":"Editar producto"} icono="fa-box">
+          <ProductForm producto={editando==="nuevo"?null:editando} categorias={categorias} onGuardar={guardarProducto} />
+        </ModalCentrado>
+      )}
+
+      {editandoCliente && (
+        <ModalCentrado onClose={()=>setEditandoCliente(null)} titulo={editandoCliente==="nuevo"?"Nuevo cliente":"Editar cliente"} icono="fa-user">
+          <ClienteForm cliente={editandoCliente==="nuevo"?null:editandoCliente} onGuardar={guardarCliente} />
+        </ModalCentrado>
+      )}
+
+      {escanerAbierto && (
+        <ModalCentrado onClose={()=>setEscanerAbierto(false)} titulo="Escanear código de barras" icono="fa-barcode">
+          <ScannerModal onScan={onCodigoEscaneado} />
+        </ModalCentrado>
+      )}
+
+      {productoEscaneado && (
+        <ModalCentrado onClose={()=>setProductoEscaneado(null)} titulo={productoEscaneado.nuevo?"Código no encontrado":"Ajustar stock"} icono="fa-barcode">
+          <div className="p-6">
+            {productoEscaneado.nuevo ? (
+              <>
+                <p className="text-sm mb-4">El código <b>{productoEscaneado.codigoBarras}</b> no corresponde a ningún producto cargado.</p>
+                <button onClick={()=>{ setEditando({codigoBarras:productoEscaneado.codigoBarras, nombre:"", categoria:"General", imagen:"", precioMinorista:"", precioMayorista:"", cantMinMayorista:"", stock:""}); setProductoEscaneado(null); }}
+                  className="w-full bg-marca-500 hover:bg-marca-600 text-white py-2.5 rounded-xl text-sm font-bold">Cargar como producto nuevo</button>
+              </>
+            ) : (
+              <>
+                <h4 className="font-heading text-base mb-1">{productoEscaneado.nombre}</h4>
+                <p className="text-xs text-carbon-400 mb-4">Código: {productoEscaneado.codigoBarras}</p>
+                <div className="flex items-center gap-3 justify-center">
+                  <button onClick={()=>ajustarStock(productoEscaneado.id,-1)} className="w-11 h-11 rounded-xl bg-carbon-900 text-ambar-300 font-bold text-lg">-</button>
+                  <span className="font-heading text-2xl w-16 text-center">{(productos.find(p=>p.id===productoEscaneado.id)||{}).stock || 0}</span>
+                  <button onClick={()=>ajustarStock(productoEscaneado.id,1)} className="w-11 h-11 rounded-xl bg-carbon-900 text-ambar-300 font-bold text-lg">+</button>
+                </div>
+                <p className="text-center text-xs text-carbon-400 mt-2">unidades en stock</p>
+              </>
+            )}
+          </div>
+        </ModalCentrado>
+      )}
+
+      {adminHistorialCliente && (
+        <DrawerDerecha onClose={()=>setAdminHistorialCliente(null)} titulo={"Historial — "+(adminHistorialCliente.nombre||adminHistorialCliente.numero)}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {pedidos.filter(p=>p.clienteId===adminHistorialCliente.id).length===0 && <p className="text-carbon-400 text-sm text-center py-8">Este cliente todavía no hizo pedidos.</p>}
+            {pedidos.filter(p=>p.clienteId===adminHistorialCliente.id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(p=>(
+              <PedidoResumen key={p.id} p={p} />
+            ))}
+          </div>
+        </DrawerDerecha>
+      )}
+    </div>
+  );
+}
+
+/* ============ COMPONENTES ============ */
+
+function ModalCentrado({onClose,titulo,icono,children}){
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-carbon-900/70 backdrop-blur-sm animate-fade-in" onClick={onClose}></div>
+      <div className="relative bg-carbon-50 w-full sm:max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto animate-slide-up">
+        <div className="sticky top-0 bg-carbon-900 text-ambar-300 px-5 py-3.5 flex justify-between items-center border-b-4 border-marca-500 z-10">
+          <h3 className="font-heading text-sm">{icono && <i className={"fa-solid "+icono+" mr-2"}></i>}{titulo}</h3>
+          <button onClick={onClose}><i className="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DrawerDerecha({onClose,titulo,icono,children}){
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-carbon-900/60 backdrop-blur-sm animate-fade-in" onClick={onClose}></div>
+      <div className="relative w-full max-w-md bg-carbon-50 h-full shadow-2xl flex flex-col animate-slide-up">
+        <div className="p-4 bg-carbon-900 text-ambar-300 flex justify-between items-center border-b-4 border-marca-500 flex-shrink-0">
+          <h2 className="font-heading text-base">{icono && <i className={"fa-solid "+icono+" mr-2"}></i>}{titulo}</h2>
+          <button onClick={onClose}><i className="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ModalAdmin({adminLogged,onClose,onSalir,userInput,setUserInput,passInput,setPassInput,loginAdminError,intentarLoginAdmin,adminTab,setAdminTab,pedidosNuevos,children}){
+  const TABS = [["productos","Productos"],["clientes","Clientes"],["pedidos","Pedidos"],["stock","Stock"],["estadisticas","Estadísticas"]];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+      <div className="absolute inset-0 bg-carbon-900/80 backdrop-blur-sm animate-fade-in" onClick={onClose}></div>
+      <div className="relative bg-carbon-50 w-full sm:max-w-3xl rounded-2xl shadow-2xl overflow-hidden max-h-[94vh] flex flex-col animate-slide-up">
+        <div className="sticky top-0 bg-carbon-900 text-ambar-300 px-5 py-3.5 flex justify-between items-center border-b-4 border-marca-500 flex-shrink-0">
+          <h3 className="font-heading text-sm"><i className="fa-solid fa-lock mr-2"></i>{adminLogged?"Administración GOLO-MAS":"Ingresar"}</h3>
+          <button onClick={onClose}><i className="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        {!adminLogged ? (
+          <div className="p-6 space-y-3">
+            <input value={userInput} onChange={e=>setUserInput(e.target.value)} placeholder="Usuario" className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" />
+            <input value={passInput} onChange={e=>setPassInput(e.target.value)} type="password" placeholder="Contraseña" onKeyDown={e=>e.key==="Enter"&&intentarLoginAdmin()} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" />
+            {loginAdminError && <p className="text-marca-600 text-xs">{loginAdminError}</p>}
+            <button onClick={intentarLoginAdmin} className="w-full bg-carbon-900 text-ambar-300 py-2.5 rounded-xl text-sm font-bold">Entrar</button>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-1.5 px-4 pt-3 pb-2 overflow-x-auto no-scrollbar flex-shrink-0 border-b border-carbon-200">
+              {TABS.map(([id,label])=>(
+                <button key={id} onClick={()=>setAdminTab(id)} className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${adminTab===id?'bg-carbon-900 text-ambar-300':'bg-carbon-100 text-carbon-600'}`}>
+                  {label}{id==="pedidos" && pedidosNuevos>0 && ` (${pedidosNuevos})`}
+                </button>
+              ))}
+              <button onClick={onSalir} className="ml-auto flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold bg-marca-600 text-white">Salir</button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">{children}</div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductCard({p,modoPrecio,precioProducto,agregarAlCarrito}){
+  const [cant,setCant] = useState(1);
+  const agotado = (p.stock!==undefined && p.stock!=="" && Number(p.stock)<=0) || p.agotado;
+  const precio = precioProducto(p,cant,modoPrecio);
+  const otroPrecio = modoPrecio==="minorista" ? p.precioMayorista : p.precioMinorista;
+  return (
+    <div className="relative bg-white rounded-2xl tarjeta overflow-hidden flex flex-col animate-fade-in">
+      {p.imagen ? <img src={p.imagen} className="w-full aspect-square object-cover" /> : (
+        <div className="w-full aspect-square bg-carbon-100 flex items-center justify-center text-carbon-300"><i className="fa-solid fa-box text-2xl"></i></div>
+      )}
+      {agotado && (
+        <div className="absolute inset-0 bg-white/85 flex items-center justify-center">
+          <span className="font-heading text-xs text-marca-600 uppercase">Sin stock</span>
+        </div>
+      )}
+      <div className="p-2.5 flex flex-col gap-1 flex-1">
+        <span className="text-[9.5px] uppercase tracking-wide font-bold text-ambar-600">{p.categoria||"General"}</span>
+        <p className="text-[13px] font-bold leading-tight min-h-[32px]">{p.nombre}</p>
+        <div className="mt-auto">
+          <p className="font-heading text-marca-600 text-base leading-none">{fmt(precio)}</p>
+          {otroPrecio ? <p className="text-[10px] text-carbon-400 mt-1">{modoPrecio==="minorista"?"Mayor":"Menor"}: {fmt(otroPrecio)}{p.cantMinMayorista?` desde ${p.cantMinMayorista}u`:""}</p> : null}
+        </div>
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <div className="flex items-center bg-carbon-100 rounded-lg overflow-hidden flex-shrink-0">
+            <button onClick={()=>setCant(c=>Math.max(1,c-1))} className="w-6 h-7 text-xs font-bold">-</button>
+            <input value={cant} onChange={e=>setCant(Math.max(1,Number(e.target.value)||1))} className="w-7 text-center text-xs font-bold bg-transparent" />
+            <button onClick={()=>setCant(c=>c+1)} className="w-6 h-7 text-xs font-bold">+</button>
+          </div>
+          <button disabled={agotado} onClick={()=>agregarAlCarrito(p,cant)} className="flex-1 bg-carbon-900 disabled:opacity-30 text-ambar-300 rounded-lg text-[11px] font-bold py-1.5 hover:bg-marca-600 hover:text-white transition">Agregar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductoAdminCard({p,seleccionado,toggleSeleccion,onEditar,onBorrar}){
+  return (
+    <div className={`relative bg-white rounded-xl border overflow-hidden ${seleccionado?'border-ambar-400 ring-2 ring-ambar-300':'border-carbon-100'}`}>
+      <input type="checkbox" checked={seleccionado} onChange={()=>toggleSeleccion(p.id)} className="absolute top-1.5 left-1.5 w-4 h-4 z-10" />
+      {p.imagen ? <img src={p.imagen} className="w-full aspect-square object-cover" /> : <div className="w-full aspect-square bg-carbon-100 flex items-center justify-center text-carbon-300 text-xs">Sin foto</div>}
+      <div className="p-2">
+        <p className="text-[12px] font-bold truncate">{p.nombre}</p>
+        <p className="text-[11px] text-marca-600 font-bold">{fmt(p.precioMinorista)}</p>
+        <div className="flex gap-1 mt-1.5">
+          <button onClick={onEditar} className="flex-1 bg-carbon-100 rounded-lg text-[10px] font-bold py-1">Editar</button>
+          <button onClick={onBorrar} className="flex-1 bg-marca-500 text-white rounded-lg text-[10px] font-bold py-1">Borrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PedidoResumen({p}){
+  const colorEstado = {recibido:"text-ambar-600",'en camino':"text-marca-600",entregado:"text-green-600",rechazado:"text-carbon-400"}[p.estado] || "text-carbon-500";
+  return (
+    <div className="bg-white border border-carbon-100 rounded-xl p-3">
+      <div className="flex justify-between items-center mb-1.5">
+        <span className="text-xs font-bold text-carbon-500">{new Date(p.fecha).toLocaleDateString("es-AR")}</span>
+        <span className={"text-[11px] font-bold uppercase "+colorEstado}>{p.estado}</span>
+      </div>
+      {(p.items||[]).map((it,i)=><p key={i} className="text-xs text-carbon-600">{it.cantidad}x {it.nombre} — {fmt(it.subtotal)}</p>)}
+      <p className="font-heading text-sm mt-1.5">Total: {fmt(p.total)}</p>
+    </div>
+  );
+}
+
+function ProductForm({producto,categorias,onGuardar}){
+  const [form,setForm] = useState(producto || {nombre:"",categoria:"General",imagen:"",precioMinorista:"",precioMayorista:"",cantMinMayorista:"",codigoBarras:"",stock:"",agotado:false});
+  const set = (k,v)=>setForm(f=>({...f,[k]:v}));
+  return (
+    <div className="p-5 space-y-3">
+      <Campo label="Nombre"><input value={form.nombre} onChange={e=>set("nombre",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      <Campo label="Categoría"><input list="cats" value={form.categoria} onChange={e=>set("categoria",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" />
+        <datalist id="cats">{categorias.map(c=><option key={c} value={c}/>)}</datalist>
+      </Campo>
+      <Campo label="URL de imagen"><input value={form.imagen} onChange={e=>set("imagen",e.target.value)} placeholder="https://..." className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      <Campo label="Código de barras"><input value={form.codigoBarras||""} onChange={e=>set("codigoBarras",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      <div className="grid grid-cols-2 gap-3">
+        <Campo label="Precio minorista ($)"><input type="number" value={form.precioMinorista} onChange={e=>set("precioMinorista",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+        <Campo label="Precio mayorista ($)"><input type="number" value={form.precioMayorista} onChange={e=>set("precioMayorista",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Campo label="Cant. mínima mayorista"><input type="number" value={form.cantMinMayorista} onChange={e=>set("cantMinMayorista",e.target.value)} placeholder="ej: 6" className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+        <Campo label="Stock"><input type="number" value={form.stock} onChange={e=>set("stock",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      </div>
+      <label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={!!form.agotado} onChange={e=>set("agotado",e.target.checked)} />Marcar como sin stock</label>
+      <button onClick={()=>onGuardar(form)} className="w-full bg-marca-500 hover:bg-marca-600 text-white py-2.5 rounded-xl text-sm font-bold">Guardar</button>
+    </div>
+  );
+}
+
+function ClienteForm({cliente,onGuardar}){
+  const [form,setForm] = useState(cliente || {numero:"",password:"",nombre:"",telefono:"",direccion:"",cuil:"",descuento:""});
+  const set = (k,v)=>setForm(f=>({...f,[k]:v}));
+  return (
+    <div className="p-5 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Campo label="Número de cliente"><input value={form.numero} onChange={e=>set("numero",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+        <Campo label="Contraseña"><input value={form.password} onChange={e=>set("password",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      </div>
+      <Campo label="Nombre"><input value={form.nombre} onChange={e=>set("nombre",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      <Campo label="Teléfono"><input value={form.telefono} onChange={e=>set("telefono",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      <Campo label="Dirección"><input value={form.direccion} onChange={e=>set("direccion",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      <div className="grid grid-cols-2 gap-3">
+        <Campo label="CUIL"><input value={form.cuil} onChange={e=>set("cuil",e.target.value)} className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+        <Campo label="Descuento especial (%)"><input type="number" value={form.descuento} onChange={e=>set("descuento",e.target.value)} placeholder="0" className="w-full border border-carbon-200 rounded-xl p-2.5 text-sm" /></Campo>
+      </div>
+      <button onClick={()=>onGuardar(form)} className="w-full bg-marca-500 hover:bg-marca-600 text-white py-2.5 rounded-xl text-sm font-bold">Guardar</button>
+    </div>
+  );
+}
+
+function Campo({label,children}){
+  return <div><label className="text-[11px] font-bold text-carbon-500 block mb-1">{label}</label>{children}</div>;
+}
+
+function ScannerModal({onScan}){
+  const [error,setError] = useState("");
+  const [buscando,setBuscando] = useState(true);
+
+  useEffect(()=>{
+    let html5Qr; let activo = true;
+    if(!window.Html5Qrcode){
+      setError("La librería de escaneo no cargó. Revisá tu conexión a internet y volvé a intentar.");
+      return;
+    }
+    if(location.protocol !== "https:" && location.hostname !== "localhost"){
+      setError("La cámara solo funciona en el sitio publicado (https). Probá desde el link de Vercel, no abriendo el archivo directo.");
+      return;
+    }
+    try{
+      html5Qr = new Html5Qrcode("reader");
+      html5Qr.start(
+        {facingMode:"environment"},
+        {fps:10, qrbox:{width:250,height:150}},
+        (decodedText)=>{
+          if(activo){ activo=false; html5Qr.stop().catch(()=>{}); onScan(decodedText); }
+        },
+        ()=>{}
+      ).then(()=>setBuscando(false)).catch(()=>{
+        setError("No se pudo acceder a la cámara. Revisá los permisos del navegador o usá la carga manual.");
+      });
+    }catch(e){
+      setError("El navegador no permite usar la cámara acá. Usá la carga manual.");
+    }
+    return ()=>{ if(html5Qr){ html5Qr.stop().catch(()=>{}); } };
+  },[]);
+
+  return (
+    <div className="p-5">
+      <div id="reader"></div>
+      {error && <p className="text-marca-600 text-xs mt-3">{error}</p>}
+      {!error && <p className="text-[11px] text-carbon-400 mt-3">Apuntá con la cámara al código de barras del producto.</p>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
