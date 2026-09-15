@@ -8,12 +8,12 @@
 <meta property="og:title" content="Waysty">
 <meta property="og:description" content="Buenas Burgers Y Buenas Papas">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#0F1730">
+<meta name="theme-color" content="#B7241A">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🍟%3C/text%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
@@ -28,33 +28,33 @@
         },
         colors: {
           cafe: {
-            50: '#FFF8EC',
-            100: '#F7E4C3',
-            200: '#EFC48A',
-            300: '#D99A55',
-            400: '#6B7A99',
-            500: '#48587A',
-            600: '#324066',
-            700: '#232E4D',
-            800: '#182140',
-            900: '#0F1730',
+            50: '#FFF2EC',
+            100: '#F5DBD6',
+            200: '#E9B4AA',
+            300: '#D78375',
+            400: '#C64E39',
+            500: '#973726',
+            600: '#70271A',
+            700: '#8C1B12',
+            800: '#D9432B',
+            900: '#B7241A',
           },
           bronce: {
-            300: '#FFE49E',
-            400: '#FFC93C',
-            500: '#FFB100',
-            600: '#D98D00',
+            300: '#FFE9A6',
+            400: '#FFD400',
+            500: '#F2B600',
+            600: '#C98F00',
           },
           vino: {
-            500: '#FF7A50',
-            600: '#E8432E',
-            700: '#C22F1D',
-            800: '#8F2013',
+            500: '#FF8A5B',
+            600: '#F2600C',
+            700: '#C94A08',
+            800: '#8F3305',
           },
           celeste: {
-            400: '#6FB3E0',
-            500: '#2E93D6',
-            600: '#1D6FA8',
+            400: '#5B7FA6',
+            500: '#2F5C8A',
+            600: '#1E3F63',
           }
         },
         animation: {
@@ -83,36 +83,43 @@
 <style>
   body {
     font-family: 'Nunito', sans-serif;
-    background-color: #FFF8EC;
-    color: #182140;
+    background-color: #FFF2EC;
+    color: #5C1D13;
     overflow-x: hidden;
   }
-  h1, h2, h3, .font-heading { font-family: 'Anton', sans-serif; letter-spacing: 0.02em; }
+  h1, h2, h3, .font-heading { font-family: 'Fredoka', sans-serif; font-weight: 700; letter-spacing: 0; }
 
   ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: #FFF8EC; }
-  ::-webkit-scrollbar-thumb { background: #D99A55; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #B87F3A; }
+  ::-webkit-scrollbar-track { background: #FFF2EC; }
+  ::-webkit-scrollbar-thumb { background: #D78375; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #973726; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
   .bg-papel {
-    background-color: #FFF8EC;
+    background-color: #FFF2EC;
     background-image:
-      radial-gradient(at 0% 0%, rgba(255,201,60,0.10) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(232,67,46,0.06) 0px, transparent 50%),
-      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23efc48a' fill-opacity='0.18' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+      radial-gradient(at 0% 0%, rgba(255,212,0,0.10) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(183,36,26,0.07) 0px, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23e9b4aa' fill-opacity='0.22' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
     background-attachment: fixed;
   }
 
   .filete-borde {
-    border: 1px solid rgba(239, 196, 138, 0.5);
-    box-shadow: 0 10px 15px -3px rgba(15, 23, 48, 0.1), 0 4px 6px -2px rgba(15, 23, 48, 0.05);
+    border: 1px solid rgba(245, 219, 214, 0.7);
+    box-shadow: 0 10px 15px -3px rgba(183, 36, 26, 0.12), 0 4px 6px -2px rgba(183, 36, 26, 0.06);
     transition: all 0.3s ease;
   }
   .filete-borde:hover {
-    border-color: #D99A55;
-    box-shadow: 0 20px 25px -5px rgba(15, 23, 48, 0.15), 0 10px 10px -5px rgba(15, 23, 48, 0.04);
+    border-color: #D78375;
+    box-shadow: 0 20px 25px -5px rgba(183, 36, 26, 0.18), 0 10px 10px -5px rgba(183, 36, 26, 0.06);
+  }
+  .text-brand-outline {
+    color: #FFD400;
+    text-shadow:
+      -2px -2px 0 #8C1B12, 2px -2px 0 #8C1B12, -2px 2px 0 #8C1B12, 2px 2px 0 #8C1B12,
+      -2px 0px 0 #8C1B12, 2px 0px 0 #8C1B12, 0px -2px 0 #8C1B12, 0px 2px 0 #8C1B12,
+      4px 4px 0 rgba(92, 29, 19, 0.35);
   }
 
   .btn-flotante {
@@ -844,7 +851,7 @@ function App() {
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setCategoriaActiva('todas'); setBusqueda(''); }}>
             {config.logo && <img src={config.logo} alt="Logo" className="w-12 h-12 rounded-full object-cover border-2 border-bronce-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 bg-white" />}
             <div>
-              <h1 className="text-xl sm:text-2xl font-heading text-bronce-400 tracking-wide uppercase group-hover:text-bronce-300 transition-colors leading-none">{NOMBRE_NEGOCIO}</h1>
+              <h1 className="text-xl sm:text-2xl font-heading text-brand-outline tracking-wide uppercase transition-transform group-hover:scale-105 leading-none">{NOMBRE_NEGOCIO}</h1>
               <p className="text-xs text-cafe-200 hidden sm:block opacity-80 mt-1">{TAGLINE}</p>
             </div>
           </div>
